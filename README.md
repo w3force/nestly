@@ -1,4 +1,4 @@
-# 💹 Projection – 401(k) & Wealth Projection App
+# 💹 Nestly – 401(k) & Wealth Projection App
 
 **Projection** is a full-stack TypeScript + Python project that forecasts 401(k) and investment growth, visualizes future retirement balances, and lets users compare scenarios across Web, Android, and iOS.
 
