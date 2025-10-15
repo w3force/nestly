@@ -4,7 +4,7 @@ import { Text, View } from 'react-native';
 export default function App() {
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <Text>Projection 401(k) & Wealth App (Mobile)</Text>
+      <Text>Nestly Retirement Planner (Mobile)</Text>
     </View>
   );
 }
