@@ -1,0 +1,68 @@
+# Node
+node_modules/
+pnpm-lock.yaml
+.pnp.cjs
+.cache/
+.next/
+/dist/
+/lib/
+
+# Monorepo
+packages/*/node_modules/
+apps/*/node_modules/
+**/node_modules/
+**/.DS_Store
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# TypeScript
+*.tsbuildinfo
+
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.envrc
+
+# VSCode
+.vscode/
+
+# macOS
+.DS_Store
+
+# React Native / Expo
+.expo/
+.expo-shared/
+
+# JetBrains
+.idea/
+
+# Build outputs
+dist/
+build/
+
+# Misc
+coverage/
+coverage-final.json
+
+# Lockfiles for other package managers
+package-lock.json
+yarn.lock
+
+# Secrets
+*.pem
+*.key
+secrets.json
+
+# Ignore OS swap files
+*.swp

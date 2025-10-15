@@ -1,0 +1,16 @@
+{
+  "name": "@projection/api-client",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.ts",
+  "types": "index.ts",
+  "dependencies": {
+    "openapi-typescript": "^6.0.0"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.90.3"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^5.90.3"
+  }
+}
