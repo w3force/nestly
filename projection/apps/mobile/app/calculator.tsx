@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ScrollView, View } from "react-native";
+import { ScrollView, View, StyleSheet } from "react-native";
 import {
   ActivityIndicator,
   Button,
@@ -14,6 +14,42 @@ import * as scale from "d3-scale";
 import { VictoryChart, VictoryLine, VictoryTheme } from "victory-native";
 import { simulateDeterministic, useProjectionStore } from "@projection/core";
 import type { MonteCarloInput, MonteCarloResponse } from "@projection/api-client";
+import { API_BASE_URL } from "../config";
+
+const styles = StyleSheet.create({
+  inputSpacing: {
+    marginBottom: 12,
+  },
+  resultText: {
+    marginTop: 16,
+    fontWeight: "bold" as const,
+    color: "#30403A",
+  },
+  errorText: {
+    marginTop: 12,
+    color: "#c62828",
+  },
+  switchContainer: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    marginBottom: 12,
+  },
+  switchLabel: {
+    flex: 1,
+    color: "#30403A",
+  },
+  successText: {
+    color: "#30403A",
+  },
+  medianText: {
+    marginTop: 4,
+    color: "#30403A",
+  },
+});
+
+// SVG-specific styles (not in StyleSheet)
+const chartAxisTextStyle = { fontSize: 10, fill: "rgba(48, 64, 58, 0.8)" };
+const deterministicStrokeStyle = { stroke: "#69B47A", strokeWidth: 2 };
 
 const defaultMonteCarloInput: MonteCarloInput = {
   current_age: 30,
@@ -34,7 +70,7 @@ const defaultMonteCarloInput: MonteCarloInput = {
 };
 
 async function runMonteCarlo(input: MonteCarloInput): Promise<MonteCarloResponse> {
-  const response = await fetch("http://localhost:8000/monte-carlo", {
+  const response = await fetch(`${API_BASE_URL}/monte-carlo`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -121,20 +157,26 @@ const CalculatorScreen: React.FC = () => {
     setMcError(null);
     setMcLoading(true);
     try {
-  const payload: MonteCarloInput = {
+      const payload: MonteCarloInput = {
         ...mcInput,
-        expected_return: (mcInput.expected_return ?? defaultMonteCarloInput.expected_return) ,
+        expected_return: (mcInput.expected_return ?? defaultMonteCarloInput.expected_return),
         return_volatility: mcInput.return_volatility ?? defaultMonteCarloInput.return_volatility,
         fees_annual: mcInput.fees_annual ?? 0,
         n_paths: mcInput.n_paths ?? defaultMonteCarloInput.n_paths,
         glidepath: mcInput.glidepath ?? false,
         inflation: mcInput.inflation ?? defaultMonteCarloInput.inflation,
         salary_growth: mcInput.salary_growth ?? defaultMonteCarloInput.salary_growth,
+        employer_match_rate: mcInput.employer_match_rate ?? 0,
+        rebalance_annually: mcInput.rebalance_annually ?? true,
       };
+      console.log('Monte Carlo Request:', { url: `${API_BASE_URL}/monte-carlo`, payload });
       const response = await runMonteCarlo(payload);
+      console.log('Monte Carlo Response:', response);
       setMcResult(response);
     } catch (error) {
-      setMcError(error instanceof Error ? error.message : "Monte Carlo failed");
+      console.error('Monte Carlo Error:', error);
+      const errorMessage = error instanceof Error ? error.message : "Monte Carlo failed";
+      setMcError(`${errorMessage}\n\nAPI URL: ${API_BASE_URL}/monte-carlo\n\nTip: If testing on a physical device, change localhost to your computer's IP address in apps/mobile/config.ts`);
     } finally {
       setMcLoading(false);
     }
@@ -175,35 +217,50 @@ const CalculatorScreen: React.FC = () => {
             value={age.toString()}
             keyboardType="numeric"
             onChangeText={value => setAge(Number(value || 0))}
-            style={inputSpacing}
+            style={styles.inputSpacing}
+            mode="outlined"
+            outlineColor="#4ABDAC"
+            activeOutlineColor="#69B47A"
           />
           <TextInput
             label="Retirement Age"
             value={retireAge.toString()}
             keyboardType="numeric"
             onChangeText={value => setRetireAge(Number(value || 0))}
-            style={inputSpacing}
+            style={styles.inputSpacing}
+            mode="outlined"
+            outlineColor="#4ABDAC"
+            activeOutlineColor="#69B47A"
           />
           <TextInput
             label="Current Balance ($)"
             value={balance.toString()}
             keyboardType="numeric"
             onChangeText={value => setBalance(Number(value || 0))}
-            style={inputSpacing}
+            style={styles.inputSpacing}
+            mode="outlined"
+            outlineColor="#4ABDAC"
+            activeOutlineColor="#69B47A"
           />
           <TextInput
             label="Annual Contribution ($)"
             value={contribution.toString()}
             keyboardType="numeric"
             onChangeText={value => setContribution(Number(value || 0))}
-            style={inputSpacing}
+            style={styles.inputSpacing}
+            mode="outlined"
+            outlineColor="#4ABDAC"
+            activeOutlineColor="#69B47A"
           />
           <TextInput
             label="Expected Return (%)"
             value={rate.toString()}
             keyboardType="numeric"
             onChangeText={value => setRate(Number(value || 0))}
-            style={inputSpacing}
+            style={styles.inputSpacing}
+            mode="outlined"
+            outlineColor="#4ABDAC"
+            activeOutlineColor="#69B47A"
           />
           <Button mode="contained" onPress={handleCalculate} loading={loading} disabled={loading}>
             Calculate
@@ -219,7 +276,7 @@ const CalculatorScreen: React.FC = () => {
               <YAxis
                 data={result.nominalBalances}
                 contentInset={{ top: 20, bottom: 20 }}
-                svg={{ fontSize: 10, fill: "#888" }}
+                svg={chartAxisTextStyle}
                 numberOfTicks={6}
                 formatLabel={formatYAxisLabel}
               />
@@ -227,7 +284,7 @@ const CalculatorScreen: React.FC = () => {
                 <LineChart
                   style={{ flex: 1 }}
                   data={result.nominalBalances}
-                  svg={{ stroke: "#1976d2", strokeWidth: 2 }}
+                  svg={deterministicStrokeStyle}
                   contentInset={{ top: 20, bottom: 20 }}
                 >
                   <Grid />
@@ -238,11 +295,11 @@ const CalculatorScreen: React.FC = () => {
                   scale={scale.scaleLinear}
                   formatLabel={formatXAxisLabel}
                   contentInset={{ left: 10, right: 10 }}
-                  svg={{ fontSize: 10, fill: "#888" }}
+                  svg={chartAxisTextStyle}
                 />
               </View>
             </View>
-            <Text style={{ marginTop: 16, fontWeight: "bold" }}>
+            <Text style={styles.resultText}>
               Final Balance: {formatCurrency(result.nominalBalances.at(-1))}
             </Text>
           </Card.Content>
@@ -262,7 +319,55 @@ const CalculatorScreen: React.FC = () => {
                 return_volatility: Number(value || 0) / 100,
               }))
             }
-            style={inputSpacing}
+            style={styles.inputSpacing}
+            mode="outlined"
+            outlineColor="#4ABDAC"
+            activeOutlineColor="#69B47A"
+          />
+          <TextInput
+            label="Inflation (%)"
+            value={((mcInput.inflation ?? 0) * 100).toString()}
+            keyboardType="numeric"
+            onChangeText={value =>
+              setMcInput((prev: MonteCarloInput) => ({
+                ...prev,
+                inflation: Number(value || 0) / 100,
+              }))
+            }
+            style={styles.inputSpacing}
+            mode="outlined"
+            outlineColor="#4ABDAC"
+            activeOutlineColor="#69B47A"
+          />
+          <TextInput
+            label="Salary Growth (%)"
+            value={((mcInput.salary_growth ?? 0) * 100).toString()}
+            keyboardType="numeric"
+            onChangeText={value =>
+              setMcInput((prev: MonteCarloInput) => ({
+                ...prev,
+                salary_growth: Number(value || 0) / 100,
+              }))
+            }
+            style={styles.inputSpacing}
+            mode="outlined"
+            outlineColor="#4ABDAC"
+            activeOutlineColor="#69B47A"
+          />
+          <TextInput
+            label="Employer Match Rate (%)"
+            value={((mcInput.employer_match_rate ?? 0) * 100).toString()}
+            keyboardType="numeric"
+            onChangeText={value =>
+              setMcInput((prev: MonteCarloInput) => ({
+                ...prev,
+                employer_match_rate: Number(value || 0) / 100,
+              }))
+            }
+            style={styles.inputSpacing}
+            mode="outlined"
+            outlineColor="#4ABDAC"
+            activeOutlineColor="#69B47A"
           />
           <TextInput
             label="# Paths"
@@ -274,7 +379,10 @@ const CalculatorScreen: React.FC = () => {
                 n_paths: Number(value || 0),
               }))
             }
-            style={inputSpacing}
+            style={styles.inputSpacing}
+            mode="outlined"
+            outlineColor="#4ABDAC"
+            activeOutlineColor="#69B47A"
           />
           <TextInput
             label="Annual Fee (%)"
@@ -286,16 +394,31 @@ const CalculatorScreen: React.FC = () => {
                 fees_annual: Number(value || 0) / 100,
               }))
             }
-            style={inputSpacing}
+            style={styles.inputSpacing}
+            mode="outlined"
+            outlineColor="#4ABDAC"
+            activeOutlineColor="#69B47A"
           />
-          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
-            <Text style={{ flex: 1 }}>Glidepath</Text>
+          <View style={styles.switchContainer}>
+            <Text style={styles.switchLabel}>Glidepath</Text>
             <Switch
               value={!!mcInput.glidepath}
               onValueChange={value =>
                 setMcInput((prev: MonteCarloInput) => ({
                   ...prev,
                   glidepath: value,
+                }))
+              }
+            />
+          </View>
+          <View style={styles.switchContainer}>
+            <Text style={styles.switchLabel}>Rebalance Annually</Text>
+            <Switch
+              value={!!mcInput.rebalance_annually}
+              onValueChange={value =>
+                setMcInput((prev: MonteCarloInput) => ({
+                  ...prev,
+                  rebalance_annually: value,
                 }))
               }
             />
@@ -317,7 +440,7 @@ const CalculatorScreen: React.FC = () => {
           )}
 
           {mcError && (
-            <Text style={{ marginTop: 12, color: "#c62828" }}>{mcError}</Text>
+            <Text style={styles.errorText}>{mcError}</Text>
           )}
 
           {medianPoints.length > 0 && (
@@ -332,12 +455,12 @@ const CalculatorScreen: React.FC = () => {
                 </VictoryChart>
               </View>
               <Divider style={{ marginVertical: 12 }} />
-              <Text>
+              <Text style={styles.successText}>
                 Success Probability: {mcResult?.success_probability != null
                   ? `${(mcResult.success_probability * 100).toFixed(1)}%`
                   : "—"}
               </Text>
-              <Text style={{ marginTop: 4 }}>
+              <Text style={styles.medianText}>
                 Final Median (p50) Balance: {formatCurrency(finalMedian)}
               </Text>
             </View>
