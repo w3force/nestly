@@ -6,14 +6,14 @@ import { motion } from "framer-motion";
 const fadeInUp = {
   initial: { opacity: 0, y: 32 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.6, ease: "easeOut" },
-};
+  transition: { duration: 0.6, ease: "easeOut" as const },
+} as const;
 
 const fadeIn = {
   initial: { opacity: 0 },
   animate: { opacity: 1 },
-  transition: { duration: 0.8, ease: "easeOut", delay: 0.2 },
-};
+  transition: { duration: 0.8, ease: "easeOut" as const, delay: 0.2 },
+} as const;
 
 export default function Home() {
   return (

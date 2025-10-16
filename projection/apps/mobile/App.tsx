@@ -1,10 +1,15 @@
 import React from 'react';
-import { Text, View } from 'react-native';
+import { SafeAreaView, StatusBar } from 'react-native';
+import { Provider as PaperProvider } from 'react-native-paper';
+import CalculatorScreen from './app/calculator';
 
 export default function App() {
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <Text>Nestly Retirement Planner (Mobile)</Text>
-    </View>
+    <PaperProvider>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" />
+      <SafeAreaView style={{ flex: 1 }}>
+        <CalculatorScreen />
+      </SafeAreaView>
+    </PaperProvider>
   );
 }

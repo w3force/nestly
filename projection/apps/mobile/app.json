@@ -4,11 +4,12 @@
     "slug": "nestly",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "../public/icon-512x512.png",
+    "entryPoint": "./index.js",
+    "icon": "./assets/icon.png",
     "scheme": "nestly",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "../public/icon-512x512.png",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -21,18 +22,22 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.example.nestly",
-      "icon": "../public/icon-512x512.png"
+      "icon": "./assets/icon.png"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "../public/icon-512x512.png",
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.example.nestly"
     },
     "web": {
-      "favicon": "../public/favicon-32x32.png",
+      "favicon": "./assets/favicon.png",
       "name": "Nestly"
-    }
+    },
+    "plugins": [
+      "expo-asset",
+      "expo-font"
+    ]
   }
 }
