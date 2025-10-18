@@ -10,7 +10,7 @@ import {
   EarningsRecord,
   SSACalculation,
   QuickModeInputs,
-} from './types';
+} from '../types/retirement';
 import {
   getBendPoints,
   getFRA,
@@ -18,7 +18,7 @@ import {
   DELAYED_CREDIT_PER_MONTH,
   WAGE_INDEX_FACTORS,
   SS_WAGE_BASE,
-} from './config';
+} from '../config/retirement';
 
 /**
  * Estimate AIME from current income (Quick mode heuristic)

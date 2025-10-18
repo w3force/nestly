@@ -4,8 +4,8 @@
 
 import { calculateSSA, estimateAIMEFromIncome } from './ssaMath';
 import { calculateMedicarePremiums, checkMedicaidEligibility, calculateNetBenefit } from './medicareMath';
-import { QuickModeInputs, DetailedModeInputs, SSHealthcareResults, ClaimAge } from './types';
-import { quickToDetailed } from './modeUtils';
+import { QuickModeInputs, DetailedModeInputs, SSHealthcareResults, ClaimAge } from '../types/retirement';
+import { quickToDetailed } from '../utils/modeUtils';
 
 const CLAIM_AGES: ClaimAge[] = [62, 63, 64, 65, 66, 67, 68, 69, 70];
 

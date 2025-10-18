@@ -3,7 +3,7 @@
 import React from 'react';
 import { Card, CardContent, Typography, Box } from '@mui/material';
 import dynamic from 'next/dynamic';
-import { ClaimAgeSweepPoint } from './types';
+import { ClaimAgeSweepPoint } from '@projection/shared';
 import { HelpTooltip } from '../../../components/HelpTooltip';
 
 const ReactECharts = dynamic(() => import('echarts-for-react'), {

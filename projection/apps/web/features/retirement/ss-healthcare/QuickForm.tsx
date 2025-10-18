@@ -16,8 +16,7 @@ import {
   FormHelperText,
 } from '@mui/material';
 import { HelpTooltip } from '../../../components/HelpTooltip';
-import { QuickModeInputs, ClaimAge } from './types';
-import { US_STATES, getFRA } from './config';
+import { QuickModeInputs, ClaimAge, getFRA, US_STATES } from '@projection/shared';
 
 interface QuickFormProps {
   inputs: QuickModeInputs;

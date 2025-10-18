@@ -22,9 +22,16 @@ import { QuickForm } from './QuickForm';
 import { DetailedForm } from './DetailedForm';
 import { SSResultsPanel } from './SSResultsPanel';
 import { NetByClaimAgeChart } from './NetByClaimAgeChart';
-import { InputMode, QuickModeInputs, DetailedModeInputs, SSHealthcareResults } from './types';
-import { computeSSHealthcareResults } from './compute';
-import { getDefaultQuickInputs, getDefaultDetailedInputs, quickToDetailed } from './modeUtils';
+import { 
+  InputMode, 
+  QuickModeInputs, 
+  DetailedModeInputs, 
+  SSHealthcareResults,
+  getDefaultQuickInputs,
+  getDefaultDetailedInputs,
+  quickToDetailed,
+} from '@projection/shared';
+import { computeSSHealthcareResults } from './computeActions';
 
 export function SSHealthcareTab() {
   const [mode, setMode] = useState<InputMode>('QUICK');
@@ -58,7 +65,7 @@ export function SSHealthcareTab() {
     setResults(null); // Clear results on mode switch
   };
 
-  const handleCompute = () => {
+  const handleCompute = async () => {
     setLoading(true);
     
     try {
@@ -76,7 +83,7 @@ export function SSHealthcareTab() {
       }
       
       // Compute results (handles both Quick and Detailed)
-      const computed = computeSSHealthcareResults(currentInputs);
+      const computed = await computeSSHealthcareResults(currentInputs);
       setResults(computed);
       setSnackbar({ open: true, message: 'Computation complete!' });
     } catch (err: any) {

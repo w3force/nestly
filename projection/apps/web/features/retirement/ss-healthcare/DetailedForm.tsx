@@ -22,9 +22,7 @@ import {
   Divider,
 } from '@mui/material';
 import { HelpTooltip } from '../../../components/HelpTooltip';
-import { DetailedModeInputs, ClaimAge, FilingStatus, PlanType } from './types';
-import { parseEarningsCSV } from './ssaMath';
-import { US_STATES } from './config';
+import { DetailedModeInputs, ClaimAge, FilingStatus, PlanType, parseEarningsCSV, US_STATES } from '@projection/shared';
 
 interface DetailedFormProps {
   inputs: DetailedModeInputs;

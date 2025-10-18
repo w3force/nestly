@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
 import AutoGraphIcon from "@mui/icons-material/AutoGraph";
+import { LANDING_SCREEN } from "@projection/shared";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 32 },
@@ -28,30 +29,47 @@ export default function Home() {
     setIsGuestMode(router.query.mode === "guest");
   }, [router.query.mode]);
 
-  const features = [
-    {
-      title: "Projection Calculator",
-      description: "See how your savings grow over time with our powerful calculator",
-      icon: <CalculateIcon sx={{ fontSize: 40 }} />,
-      href: "/calculator",
-      color: "#69B47A",
-    },
-    {
-      title: "What-If Simulator",
-      description: "Compare scenarios side-by-side to find your optimal strategy",
-      icon: <CompareArrowsIcon sx={{ fontSize: 40 }} />,
-      href: "/what-if",
-      color: "#4ABDAC",
-    },
-    {
-      title: "Monte Carlo Analysis",
-      description: "Understand probabilities with advanced Monte Carlo simulations",
-      icon: <AutoGraphIcon sx={{ fontSize: 40 }} />,
-      href: "/calculator?tab=montecarlo",
-      color: "#FFD54F",
-      isPremium: true,
-    },
-  ];
+  // Get feature items from schema
+  const featuresSection = LANDING_SCREEN.sections[1];
+  const heroSection = LANDING_SCREEN.sections[0];
+  const heroMetadata = heroSection.metadata as any;
+  const featureItems = (featuresSection.metadata?.items || []) as Array<{
+    id: string;
+    title: string;
+    description: string;
+    cta: string;
+    navigateTo: string;
+  }>;
+
+  // Map schema to feature objects with icons and colors
+  const features = featureItems.map((item) => {
+    const iconMap: Record<string, React.ReactNode> = {
+      deterministic: <CalculateIcon sx={{ fontSize: 40 }} />,
+      whatif: <CompareArrowsIcon sx={{ fontSize: 40 }} />,
+      montecarlo: <AutoGraphIcon sx={{ fontSize: 40 }} />,
+    };
+
+    const colorMap: Record<string, string> = {
+      deterministic: "#69B47A",
+      whatif: "#4ABDAC",
+      montecarlo: "#FFD54F",
+    };
+
+    const hrefMap: Record<string, string> = {
+      deterministic: "/calculator",
+      whatif: "/what-if",
+      montecarlo: "/calculator?tab=montecarlo",
+    };
+
+    return {
+      title: item.title,
+      description: item.description,
+      icon: iconMap[item.id] || <CalculateIcon sx={{ fontSize: 40 }} />,
+      href: hrefMap[item.id] || "/calculator",
+      color: colorMap[item.id] || "#69B47A",
+      badge: (item as any).badge,
+    };
+  });
 
   return (
     <>
@@ -82,7 +100,7 @@ export default function Home() {
                     letterSpacing: "0.04em",
                   }}
                 >
-                  Nestly
+                  {heroMetadata.heroTitle}
                 </Typography>
               </motion.div>
 
@@ -99,7 +117,7 @@ export default function Home() {
                     fontSize: { xs: "1.125rem", md: "1.5rem" },
                   }}
                 >
-                  Watch your future grow, one nest at a time.
+                  {heroMetadata.heroTagline}
                 </Typography>
               </motion.div>
 
@@ -117,8 +135,7 @@ export default function Home() {
                     lineHeight: 1.7,
                   }}
                 >
-                  Nestly helps you project your savings, 401(k), Social Security, Medicare costs, and investments
-                  over time — guiding you to build a secure financial future.
+                  {heroMetadata.heroDescription}
                 </Typography>
               </motion.div>
 
@@ -133,13 +150,13 @@ export default function Home() {
                   }}
                 >
                   <Typography variant="body2" color="#30403A" fontWeight={500}>
-                    👋 Welcome, Guest! Explore Nestly with limited features.
+                    {heroMetadata.guestWelcome}
                   </Typography>
                 </Box>
               )}
             </Stack>
 
-            {/* Feature Cards */}
+            {/* Feature Cards - Using Schema */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -194,7 +211,7 @@ export default function Home() {
                                 sx={{ display: "flex", alignItems: "center", gap: 1 }}
                               >
                                 {feature.title}
-                                {feature.isPremium && (
+                                {feature.badge && (
                                   <Box
                                     component="span"
                                     sx={{
@@ -207,7 +224,7 @@ export default function Home() {
                                       color: "#30403A",
                                     }}
                                   >
-                                    PREMIUM
+                                    {feature.badge}
                                   </Box>
                                 )}
                               </Typography>
@@ -249,7 +266,7 @@ export default function Home() {
                   },
                 }}
               >
-                Start Planning Now
+                {heroMetadata.primaryCTA}
               </Button>
             </motion.div>
           </Stack>

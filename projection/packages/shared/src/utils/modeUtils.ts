@@ -2,8 +2,8 @@
  * Utility functions for mode conversion and defaults
  */
 
-import { QuickModeInputs, DetailedModeInputs } from './types';
-import { getFRA } from './config';
+import { QuickModeInputs, DetailedModeInputs } from '../types/retirement';
+import { getFRA } from '../config/retirement';
 
 /**
  * Convert Quick mode inputs to Detailed mode inputs

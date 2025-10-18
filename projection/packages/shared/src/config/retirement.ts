@@ -5,7 +5,7 @@
  * Last updated: 2025
  */
 
-import { FilingStatus } from './types';
+import { FilingStatus } from '../types/retirement';
 
 // US States for dropdown
 export const US_STATES: Record<string, string> = {

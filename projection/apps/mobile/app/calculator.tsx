@@ -8,12 +8,16 @@ import {
   Switch,
   Text,
   TextInput,
+  Snackbar,
+  SegmentedButtons,
 } from "react-native-paper";
 import { LineChart, Grid, YAxis, XAxis } from "react-native-svg-charts";
 import * as scale from "d3-scale";
 import { VictoryChart, VictoryLine, VictoryTheme } from "victory-native";
 import { simulateDeterministic, useProjectionStore } from "@projection/core";
 import type { MonteCarloInput, MonteCarloResponse } from "@projection/api-client";
+import { useTier } from "../contexts/TierContext";
+import { UpgradeBanner } from "../components/UpgradeBanner";
 import { API_BASE_URL } from "../config";
 
 const styles = StyleSheet.create({
@@ -95,6 +99,11 @@ function formatCurrency(value: number | undefined): string {
 
 const CalculatorScreen: React.FC = () => {
   const { input, setInput, result, setResult, loading, setLoading } = useProjectionStore();
+  const { currentTier, canAccessFeature } = useTier();
+  const [activeTab, setActiveTab] = useState<"deterministic" | "montecarlo" | "ss-healthcare">("deterministic");
+  const [snackbar, setSnackbar] = useState({ open: false, message: "" });
+
+  const canAccessMonteCarlo = canAccessFeature("monteCarloFullAccess");
 
   const [age, setAge] = useState(input?.age ?? 30);
   const [retireAge, setRetireAge] = useState(input?.retireAge ?? 65);
@@ -209,264 +218,336 @@ const CalculatorScreen: React.FC = () => {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
+      {/* Tab Navigation */}
       <Card>
-        <Card.Title title="401(k) Calculator" subtitle="Deterministic projection" />
         <Card.Content>
-          <TextInput
-            label="Current Age"
-            value={age.toString()}
-            keyboardType="numeric"
-            onChangeText={value => setAge(Number(value || 0))}
-            style={styles.inputSpacing}
-            mode="outlined"
-            outlineColor="#4ABDAC"
-            activeOutlineColor="#69B47A"
+          <SegmentedButtons
+            value={activeTab}
+            onValueChange={(value: any) => setActiveTab(value)}
+            buttons={[
+              {
+                value: "deterministic",
+                label: "Deterministic",
+                icon: "chart-line",
+              },
+              {
+                value: "montecarlo",
+                label: "Monte Carlo",
+                icon: "dice-multiple",
+                disabled: !canAccessMonteCarlo,
+              },
+              {
+                value: "ss-healthcare",
+                label: "SS & Healthcare",
+                icon: "hospital-box",
+              },
+            ]}
+            style={{ paddingVertical: 8 }}
           />
-          <TextInput
-            label="Retirement Age"
-            value={retireAge.toString()}
-            keyboardType="numeric"
-            onChangeText={value => setRetireAge(Number(value || 0))}
-            style={styles.inputSpacing}
-            mode="outlined"
-            outlineColor="#4ABDAC"
-            activeOutlineColor="#69B47A"
-          />
-          <TextInput
-            label="Current Balance ($)"
-            value={balance.toString()}
-            keyboardType="numeric"
-            onChangeText={value => setBalance(Number(value || 0))}
-            style={styles.inputSpacing}
-            mode="outlined"
-            outlineColor="#4ABDAC"
-            activeOutlineColor="#69B47A"
-          />
-          <TextInput
-            label="Annual Contribution ($)"
-            value={contribution.toString()}
-            keyboardType="numeric"
-            onChangeText={value => setContribution(Number(value || 0))}
-            style={styles.inputSpacing}
-            mode="outlined"
-            outlineColor="#4ABDAC"
-            activeOutlineColor="#69B47A"
-          />
-          <TextInput
-            label="Expected Return (%)"
-            value={rate.toString()}
-            keyboardType="numeric"
-            onChangeText={value => setRate(Number(value || 0))}
-            style={styles.inputSpacing}
-            mode="outlined"
-            outlineColor="#4ABDAC"
-            activeOutlineColor="#69B47A"
-          />
-          <Button mode="contained" onPress={handleCalculate} loading={loading} disabled={loading}>
-            Calculate
-          </Button>
         </Card.Content>
       </Card>
 
-      {result && (
-        <Card>
-          <Card.Title title="Deterministic Projection" />
-          <Card.Content>
-            <View style={{ height: 220, flexDirection: "row" }}>
-              <YAxis
-                data={result.nominalBalances}
-                contentInset={{ top: 20, bottom: 20 }}
-                svg={chartAxisTextStyle}
-                numberOfTicks={6}
-                formatLabel={formatYAxisLabel}
+      {/* DETERMINISTIC TAB */}
+      {activeTab === "deterministic" && (
+        <>
+          <Card>
+            <Card.Title title="401(k) Calculator" subtitle="Deterministic projection" />
+            <Card.Content>
+              <TextInput
+                label="Current Age"
+                value={age.toString()}
+                keyboardType="numeric"
+                onChangeText={value => setAge(Number(value || 0))}
+                style={styles.inputSpacing}
+                mode="outlined"
+                outlineColor="#4ABDAC"
+                activeOutlineColor="#69B47A"
               />
-              <View style={{ flex: 1, marginLeft: 8 }}>
-                <LineChart
-                  style={{ flex: 1 }}
-                  data={result.nominalBalances}
-                  svg={deterministicStrokeStyle}
-                  contentInset={{ top: 20, bottom: 20 }}
-                >
-                  <Grid />
-                </LineChart>
-                <XAxis
-                  style={{ marginTop: 8 }}
-                  data={result.nominalBalances}
-                  scale={scale.scaleLinear}
-                  formatLabel={formatXAxisLabel}
-                  contentInset={{ left: 10, right: 10 }}
-                  svg={chartAxisTextStyle}
+              <TextInput
+                label="Retirement Age"
+                value={retireAge.toString()}
+                keyboardType="numeric"
+                onChangeText={value => setRetireAge(Number(value || 0))}
+                style={styles.inputSpacing}
+                mode="outlined"
+                outlineColor="#4ABDAC"
+                activeOutlineColor="#69B47A"
+              />
+              <TextInput
+                label="Current Balance ($)"
+                value={balance.toString()}
+                keyboardType="numeric"
+                onChangeText={value => setBalance(Number(value || 0))}
+                style={styles.inputSpacing}
+                mode="outlined"
+                outlineColor="#4ABDAC"
+                activeOutlineColor="#69B47A"
+              />
+              <TextInput
+                label="Annual Contribution ($)"
+                value={contribution.toString()}
+                keyboardType="numeric"
+                onChangeText={value => setContribution(Number(value || 0))}
+                style={styles.inputSpacing}
+                mode="outlined"
+                outlineColor="#4ABDAC"
+                activeOutlineColor="#69B47A"
+              />
+              <TextInput
+                label="Expected Return (%)"
+                value={rate.toString()}
+                keyboardType="numeric"
+                onChangeText={value => setRate(Number(value || 0))}
+                style={styles.inputSpacing}
+                mode="outlined"
+                outlineColor="#4ABDAC"
+                activeOutlineColor="#69B47A"
+              />
+              <Button mode="contained" onPress={handleCalculate} loading={loading} disabled={loading}>
+                Calculate
+              </Button>
+            </Card.Content>
+          </Card>
+
+          {result && (
+            <Card>
+              <Card.Title title="Deterministic Projection" />
+              <Card.Content>
+                <View style={{ height: 220, flexDirection: "row" }}>
+                  <YAxis
+                    data={result.nominalBalances}
+                    contentInset={{ top: 20, bottom: 20 }}
+                    svg={chartAxisTextStyle}
+                    numberOfTicks={6}
+                    formatLabel={formatYAxisLabel}
+                  />
+                  <View style={{ flex: 1, marginLeft: 8 }}>
+                    <LineChart
+                      style={{ flex: 1 }}
+                      data={result.nominalBalances}
+                      svg={deterministicStrokeStyle}
+                      contentInset={{ top: 20, bottom: 20 }}
+                    >
+                      <Grid />
+                    </LineChart>
+                    <XAxis
+                      style={{ marginTop: 8 }}
+                      data={result.nominalBalances}
+                      scale={scale.scaleLinear}
+                      formatLabel={formatXAxisLabel}
+                      contentInset={{ left: 10, right: 10 }}
+                      svg={chartAxisTextStyle}
+                    />
+                  </View>
+                </View>
+                <Text style={styles.resultText}>
+                  Final Balance: {formatCurrency(result.nominalBalances.at(-1))}
+                </Text>
+              </Card.Content>
+            </Card>
+          )}
+        </>
+      )}
+
+      {/* MONTE CARLO TAB */}
+      {activeTab === "montecarlo" && (
+        <>
+          {!canAccessMonteCarlo && (
+            <UpgradeBanner
+              feature="Monte Carlo Simulations"
+              requiredTier="PREMIUM"
+            />
+          )}
+
+          <Card>
+            <Card.Title 
+              title="Monte Carlo" 
+              subtitle={canAccessMonteCarlo ? "Full simulations" : "Preview mode"}
+            />
+            <Card.Content>
+              <TextInput
+                label="Return Volatility (%)"
+                value={((mcInput.return_volatility ?? 0) * 100).toString()}
+                keyboardType="numeric"
+                onChangeText={value =>
+                  setMcInput((prev: MonteCarloInput) => ({
+                    ...prev,
+                    return_volatility: Number(value || 0) / 100,
+                  }))
+                }
+                style={styles.inputSpacing}
+                mode="outlined"
+                outlineColor="#4ABDAC"
+                activeOutlineColor="#69B47A"
+              />
+              <TextInput
+                label="Inflation (%)"
+                value={((mcInput.inflation ?? 0) * 100).toString()}
+                keyboardType="numeric"
+                onChangeText={value =>
+                  setMcInput((prev: MonteCarloInput) => ({
+                    ...prev,
+                    inflation: Number(value || 0) / 100,
+                  }))
+                }
+                style={styles.inputSpacing}
+                mode="outlined"
+                outlineColor="#4ABDAC"
+                activeOutlineColor="#69B47A"
+              />
+              <TextInput
+                label="Salary Growth (%)"
+                value={((mcInput.salary_growth ?? 0) * 100).toString()}
+                keyboardType="numeric"
+                onChangeText={value =>
+                  setMcInput((prev: MonteCarloInput) => ({
+                    ...prev,
+                    salary_growth: Number(value || 0) / 100,
+                  }))
+                }
+                style={styles.inputSpacing}
+                mode="outlined"
+                outlineColor="#4ABDAC"
+                activeOutlineColor="#69B47A"
+              />
+              <TextInput
+                label="Employer Match Rate (%)"
+                value={((mcInput.employer_match_rate ?? 0) * 100).toString()}
+                keyboardType="numeric"
+                onChangeText={value =>
+                  setMcInput((prev: MonteCarloInput) => ({
+                    ...prev,
+                    employer_match_rate: Number(value || 0) / 100,
+                  }))
+                }
+                style={styles.inputSpacing}
+                mode="outlined"
+                outlineColor="#4ABDAC"
+                activeOutlineColor="#69B47A"
+              />
+              <TextInput
+                label="# Paths"
+                value={(mcInput.n_paths ?? 0).toString()}
+                keyboardType="numeric"
+                onChangeText={value =>
+                  setMcInput((prev: MonteCarloInput) => ({
+                    ...prev,
+                    n_paths: Number(value || 0),
+                  }))
+                }
+                style={styles.inputSpacing}
+                mode="outlined"
+                outlineColor="#4ABDAC"
+                activeOutlineColor="#69B47A"
+                editable={canAccessMonteCarlo}
+              />
+              <TextInput
+                label="Annual Fee (%)"
+                value={((mcInput.fees_annual ?? 0) * 100).toString()}
+                keyboardType="numeric"
+                onChangeText={value =>
+                  setMcInput((prev: MonteCarloInput) => ({
+                    ...prev,
+                    fees_annual: Number(value || 0) / 100,
+                  }))
+                }
+                style={styles.inputSpacing}
+                mode="outlined"
+                outlineColor="#4ABDAC"
+                activeOutlineColor="#69B47A"
+              />
+              <View style={styles.switchContainer}>
+                <Text style={styles.switchLabel}>Glidepath</Text>
+                <Switch
+                  value={!!mcInput.glidepath}
+                  onValueChange={value =>
+                    setMcInput((prev: MonteCarloInput) => ({
+                      ...prev,
+                      glidepath: value,
+                    }))
+                  }
+                  disabled={!canAccessMonteCarlo}
                 />
               </View>
-            </View>
-            <Text style={styles.resultText}>
-              Final Balance: {formatCurrency(result.nominalBalances.at(-1))}
+              <View style={styles.switchContainer}>
+                <Text style={styles.switchLabel}>Rebalance Annually</Text>
+                <Switch
+                  value={!!mcInput.rebalance_annually}
+                  onValueChange={value =>
+                    setMcInput((prev: MonteCarloInput) => ({
+                      ...prev,
+                      rebalance_annually: value,
+                    }))
+                  }
+                  disabled={!canAccessMonteCarlo}
+                />
+              </View>
+
+              <Button
+                mode="contained"
+                onPress={handleMonteCarloCalculate}
+                loading={mcLoading}
+                disabled={mcLoading || !canAccessMonteCarlo}
+              >
+                {canAccessMonteCarlo ? "Run Monte Carlo" : "Upgrade to Run"}
+              </Button>
+
+              {mcLoading && (
+                <View style={{ marginTop: 16, alignItems: "center" }}>
+                  <ActivityIndicator />
+                </View>
+              )}
+
+              {mcError && (
+                <Text style={styles.errorText}>{mcError}</Text>
+              )}
+
+              {medianPoints.length > 0 && (
+                <View style={{ marginTop: 24 }}>
+                  <View style={{ height: 240 }}>
+                    <VictoryChart theme={VictoryTheme.material}>
+                      <VictoryLine
+                        data={medianPoints}
+                        interpolation="natural"
+                        style={{ data: { stroke: "#69B47A", strokeWidth: 3 } }}
+                      />
+                    </VictoryChart>
+                  </View>
+                  <Divider style={{ marginVertical: 12 }} />
+                  <Text style={styles.successText}>
+                    Success Probability: {mcResult?.success_probability != null
+                      ? `${(mcResult.success_probability * 100).toFixed(1)}%`
+                      : "—"}
+                  </Text>
+                  <Text style={styles.medianText}>
+                    Final Median (p50) Balance: {formatCurrency(finalMedian)}
+                  </Text>
+                </View>
+              )}
+            </Card.Content>
+          </Card>
+        </>
+      )}
+
+      {/* SS & HEALTHCARE TAB */}
+      {activeTab === "ss-healthcare" && (
+        <Card>
+          <Card.Title title="Social Security & Healthcare" />
+          <Card.Content>
+            <Text style={{ color: "#999", marginBottom: 16 }}>
+              Coming soon - SS & Healthcare planning tools
             </Text>
           </Card.Content>
         </Card>
       )}
 
-      <Card>
-        <Card.Title title="Monte Carlo" subtitle="Simulated percentile outcomes" />
-        <Card.Content>
-          <TextInput
-            label="Return Volatility (%)"
-            value={((mcInput.return_volatility ?? 0) * 100).toString()}
-            keyboardType="numeric"
-            onChangeText={value =>
-              setMcInput((prev: MonteCarloInput) => ({
-                ...prev,
-                return_volatility: Number(value || 0) / 100,
-              }))
-            }
-            style={styles.inputSpacing}
-            mode="outlined"
-            outlineColor="#4ABDAC"
-            activeOutlineColor="#69B47A"
-          />
-          <TextInput
-            label="Inflation (%)"
-            value={((mcInput.inflation ?? 0) * 100).toString()}
-            keyboardType="numeric"
-            onChangeText={value =>
-              setMcInput((prev: MonteCarloInput) => ({
-                ...prev,
-                inflation: Number(value || 0) / 100,
-              }))
-            }
-            style={styles.inputSpacing}
-            mode="outlined"
-            outlineColor="#4ABDAC"
-            activeOutlineColor="#69B47A"
-          />
-          <TextInput
-            label="Salary Growth (%)"
-            value={((mcInput.salary_growth ?? 0) * 100).toString()}
-            keyboardType="numeric"
-            onChangeText={value =>
-              setMcInput((prev: MonteCarloInput) => ({
-                ...prev,
-                salary_growth: Number(value || 0) / 100,
-              }))
-            }
-            style={styles.inputSpacing}
-            mode="outlined"
-            outlineColor="#4ABDAC"
-            activeOutlineColor="#69B47A"
-          />
-          <TextInput
-            label="Employer Match Rate (%)"
-            value={((mcInput.employer_match_rate ?? 0) * 100).toString()}
-            keyboardType="numeric"
-            onChangeText={value =>
-              setMcInput((prev: MonteCarloInput) => ({
-                ...prev,
-                employer_match_rate: Number(value || 0) / 100,
-              }))
-            }
-            style={styles.inputSpacing}
-            mode="outlined"
-            outlineColor="#4ABDAC"
-            activeOutlineColor="#69B47A"
-          />
-          <TextInput
-            label="# Paths"
-            value={(mcInput.n_paths ?? 0).toString()}
-            keyboardType="numeric"
-            onChangeText={value =>
-              setMcInput((prev: MonteCarloInput) => ({
-                ...prev,
-                n_paths: Number(value || 0),
-              }))
-            }
-            style={styles.inputSpacing}
-            mode="outlined"
-            outlineColor="#4ABDAC"
-            activeOutlineColor="#69B47A"
-          />
-          <TextInput
-            label="Annual Fee (%)"
-            value={((mcInput.fees_annual ?? 0) * 100).toString()}
-            keyboardType="numeric"
-            onChangeText={value =>
-              setMcInput((prev: MonteCarloInput) => ({
-                ...prev,
-                fees_annual: Number(value || 0) / 100,
-              }))
-            }
-            style={styles.inputSpacing}
-            mode="outlined"
-            outlineColor="#4ABDAC"
-            activeOutlineColor="#69B47A"
-          />
-          <View style={styles.switchContainer}>
-            <Text style={styles.switchLabel}>Glidepath</Text>
-            <Switch
-              value={!!mcInput.glidepath}
-              onValueChange={value =>
-                setMcInput((prev: MonteCarloInput) => ({
-                  ...prev,
-                  glidepath: value,
-                }))
-              }
-            />
-          </View>
-          <View style={styles.switchContainer}>
-            <Text style={styles.switchLabel}>Rebalance Annually</Text>
-            <Switch
-              value={!!mcInput.rebalance_annually}
-              onValueChange={value =>
-                setMcInput((prev: MonteCarloInput) => ({
-                  ...prev,
-                  rebalance_annually: value,
-                }))
-              }
-            />
-          </View>
-
-          <Button
-            mode="contained"
-            onPress={handleMonteCarloCalculate}
-            loading={mcLoading}
-            disabled={mcLoading}
-          >
-            Run Monte Carlo
-          </Button>
-
-          {mcLoading && (
-            <View style={{ marginTop: 16, alignItems: "center" }}>
-              <ActivityIndicator />
-            </View>
-          )}
-
-          {mcError && (
-            <Text style={styles.errorText}>{mcError}</Text>
-          )}
-
-          {medianPoints.length > 0 && (
-            <View style={{ marginTop: 24 }}>
-              <View style={{ height: 240 }}>
-                <VictoryChart theme={VictoryTheme.material}>
-                  <VictoryLine
-                    data={medianPoints}
-                    interpolation="natural"
-                    style={{ data: { stroke: "#69B47A", strokeWidth: 3 } }}
-                  />
-                </VictoryChart>
-              </View>
-              <Divider style={{ marginVertical: 12 }} />
-              <Text style={styles.successText}>
-                Success Probability: {mcResult?.success_probability != null
-                  ? `${(mcResult.success_probability * 100).toFixed(1)}%`
-                  : "—"}
-              </Text>
-              <Text style={styles.medianText}>
-                Final Median (p50) Balance: {formatCurrency(finalMedian)}
-              </Text>
-            </View>
-          )}
-        </Card.Content>
-      </Card>
+      <Snackbar
+        visible={snackbar.open}
+        onDismiss={() => setSnackbar({ ...snackbar, open: false })}
+        duration={3000}
+      >
+        {snackbar.message}
+      </Snackbar>
     </ScrollView>
   );
 };

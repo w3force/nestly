@@ -16,6 +16,7 @@ import { BottomNav } from "../../components/BottomNav";
 import { UpgradeBanner } from "../../components/UpgradeBanner";
 import { HelpTooltip } from "../../components/HelpTooltip";
 import { InfoCard } from "../../components/InfoCard";
+import { DeterministicForm } from "../../components/DeterministicForm";
 import { helpContent } from "../../lib/helpContent";
 import { SSHealthcareTab } from "../../features/retirement/ss-healthcare";
 
@@ -54,19 +55,6 @@ export default function CalculatorPage() {
   const [rate, setRate] = useState(input?.rate ?? 7);
   const [inflation, setInflation] = useState(input?.inflation ?? 2.5);
 
-  // Helper functions for slider color coding
-  const getReturnColor = (value: number) => {
-    if (value < 5) return "#FF6B6B"; // Low (red)
-    if (value >= 5 && value <= 8) return "#4ABDAC"; // Average (teal)
-    return "#69B47A"; // High (green)
-  };
-
-  const getInflationColor = (value: number) => {
-    if (value < 2) return "#69B47A"; // Low (green - good)
-    if (value >= 2 && value <= 4) return "#FFB74D"; // Average (orange)
-    return "#FF6B6B"; // High (red - bad)
-  };
-
   // Monte Carlo form state
   const [mcInput, setMcInput] = useState<MonteCarloInput>({
     current_age: 30,
@@ -92,6 +80,7 @@ export default function CalculatorPage() {
     retry: 0,
   });
 
+  // Input field styles for Monte Carlo section
   const inputFieldStyles = {
     "& .MuiOutlinedInput-root": {
       backgroundColor: "rgba(255,255,255,0.9)",
@@ -105,16 +94,6 @@ export default function CalculatorPage() {
     },
     "& .MuiInputBase-input": {
       color: "#2F5140",
-    },
-  } as const;
-
-  const sliderStyles = {
-    color: "#69B47A",
-    "& .MuiSlider-thumb": {
-      boxShadow: "0 4px 12px rgba(105, 180, 122, 0.35)",
-    },
-    "& .MuiSlider-rail": {
-      opacity: 0.3,
     },
   } as const;
 
@@ -382,228 +361,25 @@ export default function CalculatorPage() {
                 defaultExpanded={false}
                 variant="tip"
               />
-              <Box component="form" onSubmit={handleSubmit} sx={{ mb: 3, mt: 2 }}>
-                <Grid container spacing={2}>
-                  <Grid item xs={6}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                        Current Age
-                      </Typography>
-                      <HelpTooltip
-                        title={helpContent.calculator.currentAge.title}
-                        description={helpContent.calculator.currentAge.description}
-                      />
-                    </Box>
-                    <TextField
-                      type="number"
-                      value={age}
-                      onChange={handleNumberChange(setAge)}
-                      fullWidth
-                      inputProps={{ min: 18, max: 70 }}
-                      sx={inputFieldStyles}
-                    />
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                        Retirement Age
-                      </Typography>
-                      <HelpTooltip
-                        title={helpContent.calculator.retirementAge.title}
-                        description={helpContent.calculator.retirementAge.description}
-                      />
-                    </Box>
-                    <TextField
-                      type="number"
-                      value={retireAge}
-                      onChange={handleNumberChange(setRetireAge)}
-                      fullWidth
-                      inputProps={{ min: age + 1, max: 80 }}
-                      sx={inputFieldStyles}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                        Current Balance ($)
-                      </Typography>
-                      <HelpTooltip
-                        title={helpContent.calculator.currentBalance.title}
-                        description={helpContent.calculator.currentBalance.description}
-                      />
-                    </Box>
-                    <TextField
-                      type="number"
-                      value={balance}
-                      onChange={handleNumberChange(setBalance)}
-                      fullWidth
-                      inputProps={{ min: 0 }}
-                      sx={inputFieldStyles}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                        Annual Contribution ($)
-                      </Typography>
-                      <HelpTooltip
-                        title={helpContent.calculator.annualContribution.title}
-                        description={helpContent.calculator.annualContribution.description}
-                      />
-                    </Box>
-                    <TextField
-                      type="number"
-                      value={contribution}
-                      onChange={handleNumberChange(setContribution)}
-                      fullWidth
-                      inputProps={{ min: 0 }}
-                      sx={inputFieldStyles}
-                    />
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Box display="flex" alignItems="center" justifyContent="space-between" mb={0.5}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>Annual Return</Typography>
-                        <HelpTooltip
-                          title={helpContent.calculator.expectedReturn.title}
-                          description={helpContent.calculator.expectedReturn.description}
-                        />
-                      </Box>
-                      <Box
-                        sx={{
-                          background: `${getReturnColor(rate)}22`,
-                          color: '#2F5140',
-                          borderRadius: 2,
-                          border: `1px solid ${getReturnColor(rate)}55`,
-                          px: 1.5,
-                          py: 0.5,
-                          fontWeight: 600,
-                          fontSize: 16,
-                          minWidth: 56,
-                          textAlign: 'center',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 0.5,
-                        }}
-                      >
-                        {rate.toFixed(2)}%
-                        <Chip
-                          label={rate < 5 ? "Low" : rate <= 8 ? "Avg" : "High"}
-                          size="small"
-                          sx={{
-                            height: 16,
-                            fontSize: '0.65rem',
-                            backgroundColor: getReturnColor(rate),
-                            color: 'white',
-                            '& .MuiChip-label': { px: 0.5 },
-                          }}
-                        />
-                      </Box>
-                    </Box>
-                    <Slider
-                      value={rate}
-                      onChange={handleSliderChange(setRate)}
-                      min={0}
-                      max={15}
-                      step={0.1}
-                      valueLabelDisplay="off"
-                      sx={{
-                        color: getReturnColor(rate),
-                        '& .MuiSlider-thumb': {
-                          boxShadow: `0 4px 12px ${getReturnColor(rate)}55`,
-                        },
-                        '& .MuiSlider-track': {
-                          background: 'linear-gradient(to right, #FF6B6B 0%, #FF6B6B 33%, #4ABDAC 33%, #4ABDAC 53%, #69B47A 53%, #69B47A 100%)',
-                          border: 'none',
-                        },
-                        '& .MuiSlider-rail': {
-                          background: 'linear-gradient(to right, #FF6B6B 0%, #FF6B6B 33%, #4ABDAC 33%, #4ABDAC 53%, #69B47A 53%, #69B47A 100%)',
-                          opacity: 0.3,
-                        },
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Box display="flex" alignItems="center" justifyContent="space-between" mb={0.5}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>Inflation Rate</Typography>
-                        <HelpTooltip
-                          title={helpContent.calculator.inflation.title}
-                          description={helpContent.calculator.inflation.description}
-                        />
-                      </Box>
-                      <Box
-                        sx={{
-                          background: `${getInflationColor(inflation)}22`,
-                          color: '#2F5140',
-                          borderRadius: 2,
-                          border: `1px solid ${getInflationColor(inflation)}55`,
-                          px: 1.5,
-                          py: 0.5,
-                          fontWeight: 600,
-                          fontSize: 16,
-                          minWidth: 56,
-                          textAlign: 'center',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 0.5,
-                        }}
-                      >
-                        {inflation.toFixed(2)}%
-                        <Chip
-                          label={inflation < 2 ? "Low" : inflation <= 4 ? "Avg" : "High"}
-                          size="small"
-                          sx={{
-                            height: 16,
-                            fontSize: '0.65rem',
-                            backgroundColor: getInflationColor(inflation),
-                            color: 'white',
-                            '& .MuiChip-label': { px: 0.5 },
-                          }}
-                        />
-                      </Box>
-                    </Box>
-                    <Slider
-                      value={inflation}
-                      onChange={handleSliderChange(setInflation)}
-                      min={0}
-                      max={10}
-                      step={0.1}
-                      valueLabelDisplay="off"
-                      sx={{
-                        color: getInflationColor(inflation),
-                        '& .MuiSlider-thumb': {
-                          boxShadow: `0 4px 12px ${getInflationColor(inflation)}55`,
-                        },
-                        '& .MuiSlider-track': {
-                          background: 'linear-gradient(to right, #69B47A 0%, #69B47A 20%, #FFB74D 20%, #FFB74D 40%, #FF6B6B 40%, #FF6B6B 100%)',
-                          border: 'none',
-                        },
-                        '& .MuiSlider-rail': {
-                          background: 'linear-gradient(to right, #69B47A 0%, #69B47A 20%, #FFB74D 20%, #FFB74D 40%, #FF6B6B 40%, #FF6B6B 100%)',
-                          opacity: 0.3,
-                        },
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      fullWidth
-                      sx={{
-                        backgroundColor: "#69B47A",
-                        fontWeight: 600,
-                        py: 1,
-                        borderRadius: 2,
-                        "&:hover": { backgroundColor: "#5AA468" },
-                      }}
-                    >
-                      Calculate
-                    </Button>
-                  </Grid>
-                </Grid>
-              </Box>
+              <DeterministicForm
+                age={age}
+                setAge={setAge}
+                retireAge={retireAge}
+                setRetireAge={setRetireAge}
+                balance={balance}
+                setBalance={setBalance}
+                contribution={contribution}
+                setContribution={setContribution}
+                rate={rate}
+                setRate={setRate}
+                inflation={inflation}
+                setInflation={setInflation}
+                onSubmit={handleSubmit}
+                loading={loading}
+                error={mutation.isError ? "Error fetching projection. Please try again." : undefined}
+                onSaveScenario={handleSaveScenario}
+                onOpenWhatIf={() => router.push("/what-if")}
+              />
               {loading && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
                   <CircularProgress />

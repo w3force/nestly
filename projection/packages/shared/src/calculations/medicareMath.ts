@@ -12,7 +12,7 @@ import {
   MedicaidEligibility,
   NetBenefit,
   DetailedModeInputs,
-} from './types';
+} from '../types/retirement';
 import {
   PART_A_PREMIUM_2025,
   PART_A_PREMIUM_NO_CREDITS_2025,
@@ -23,7 +23,7 @@ import {
   getIRMAABracket,
   getMedicaidThreshold,
   MEDICAID_ASSET_LIMIT_SINGLE,
-} from './config';
+} from '../config/retirement';
 
 /**
  * Calculate Medicare premiums

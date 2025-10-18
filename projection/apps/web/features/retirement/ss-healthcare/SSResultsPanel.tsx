@@ -29,7 +29,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { SSHealthcareResults, InputMode } from './types';
+import { SSHealthcareResults, InputMode } from '@projection/shared';
 import { HelpTooltip } from '../../../components/HelpTooltip';
 
 interface SSResultsPanelProps {
