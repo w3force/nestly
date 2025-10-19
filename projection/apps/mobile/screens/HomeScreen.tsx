@@ -3,31 +3,41 @@ import { View, ScrollView, StyleSheet } from 'react-native';
 import { Text, Card, Button, useTheme, Icon, Chip } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { LANDING_SCREEN } from '@projection/shared';
+import QuickStartSection from '../components/QuickStartSection';
 
 export default function HomeScreen() {
   const theme = useTheme();
   const navigation = useNavigation();
 
-  // Get hero and features from shared schema
-  const heroSection = LANDING_SCREEN.sections[0];
-  const featuresSection = LANDING_SCREEN.sections[1];
-  const heroMetadata = heroSection.metadata as any;
+  // Simple hero content (no LANDING_SCREEN dependency)
+  const heroTitle = '401(k) Projections';
+  const heroTagline = 'Plan Your Retirement';
+  const heroDescription = 'See your retirement projection with just 3 inputs';
   
-  // Extract feature items from metadata
-  const featureItems = (featuresSection.metadata?.items || []) as Array<{
-    id: string;
-    title: string;
-    description: string;
-    cta: string;
-    navigateTo: string;
-    badge?: string;
-  }>;
-  
-  // Hero content from schema
-  const heroTitle = heroMetadata.heroTitle;
-  const heroTagline = heroMetadata.heroTagline;
-  const heroDescription = heroMetadata.heroDescription;
+  // Feature items
+  const featureItems = [
+    {
+      id: 'deterministic',
+      title: 'Deterministic',
+      description: 'Standard retirement calculations',
+      cta: 'Calculate',
+      navigateTo: 'Calculator',
+    },
+    {
+      id: 'whatif',
+      title: 'What-If',
+      description: 'Explore different scenarios',
+      cta: 'Explore',
+      navigateTo: 'WhatIf',
+    },
+    {
+      id: 'montecarlo',
+      title: 'Monte Carlo',
+      description: 'Probability-based projections',
+      cta: 'Analyze',
+      navigateTo: 'Calculator',
+    },
+  ];
 
   const getIcon = (id: string) => {
     if (id === 'deterministic') return 'calculator';
@@ -79,6 +89,9 @@ export default function HomeScreen() {
         </Button>
       </LinearGradient>
 
+      {/* ⚡ QUICK START SECTION - Get Results in 8 Seconds */}
+      <QuickStartSection onNavigateTo={(screen) => navigation.navigate(screen as never)} />
+
       {/* Feature Cards - from Schema */}
       <View style={styles.featuresSection}>
         <Text variant="headlineSmall" style={styles.featuresTitle}>
@@ -105,11 +118,7 @@ export default function HomeScreen() {
                     >
                       <Icon source={getIcon(item.id)} size={28} color="#FFFFFF" />
                     </View>
-                    {item.badge && (
-                      <View style={styles.premiumBadge}>
-                        <Text style={styles.premiumBadgeText}>{item.badge}</Text>
-                      </View>
-                    )}
+                    {/* Badge removed - no longer used */}
                   </View>
 
                   <Text variant="titleSmall" style={[styles.featureCardTitle, { color: iconColor }]}>

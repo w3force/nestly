@@ -10,3 +10,7 @@ export { UpgradeBanner } from './UpgradeBanner';
 export { PlansComparison } from './PlansComparison';
 export { PickerSelect } from './PickerSelect';
 export { SliderField } from './SliderField';
+export { SliderWithInfo } from './SliderWithInfo';
+export { CompactInputField } from './CompactInputField';
+export { SectionHeader } from './SectionHeader';
+export { ResultsSummary } from './ResultsSummary';

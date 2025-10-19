@@ -1,13 +1,12 @@
 /**
  * Landing Screen
  * Hero section with value proposition and key features
- * Using LANDING_SCREEN schema from @projection/shared
  */
 import React from 'react';
 import { View, ScrollView, StyleSheet, Dimensions } from 'react-native';
 import { Text, Card, Button, useTheme, Icon } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
-import { LANDING_SCREEN } from '@projection/shared';
+import QuickStartSection from '../components/QuickStartSection';
 
 interface LandingScreenProps {
   onGetStarted: () => void;
@@ -19,17 +18,30 @@ const { width } = Dimensions.get('window');
 export default function LandingScreen({ onGetStarted, onNavigateTo }: LandingScreenProps) {
   const theme = useTheme();
 
-  // Get hero section from schema
-  const heroSection = LANDING_SCREEN.sections[0];
-  // Get features from schema
-  const featuresSection = LANDING_SCREEN.sections[1];
-  const featureItems = (featuresSection.metadata?.items || []) as Array<{
-    id: string;
-    title: string;
-    description: string;
-    cta: string;
-    navigateTo: string;
-  }>;
+  // Simple feature items (no schema dependency)
+  const featureItems = [
+    {
+      id: 'deterministic',
+      title: 'Deterministic',
+      description: 'Standard retirement calculations',
+      cta: 'Calculate',
+      navigateTo: 'Calculator',
+    },
+    {
+      id: 'whatif',
+      title: 'What-If',
+      description: 'Explore different scenarios',
+      cta: 'Explore',
+      navigateTo: 'WhatIf',
+    },
+    {
+      id: 'montecarlo',
+      title: 'Monte Carlo',
+      description: 'Probability-based projections',
+      cta: 'Analyze',
+      navigateTo: 'Calculator',
+    },
+  ];
 
   const handleNavigate = (screen: string) => {
     if (onNavigateTo) {
@@ -56,12 +68,13 @@ export default function LandingScreen({ onGetStarted, onNavigateTo }: LandingScr
             Watch your future grow, one nest at a time.
           </Text>
           <Text variant="bodyLarge" style={styles.heroDescription}>
-            {LANDING_SCREEN.description}
-            {'\n\n'}
             Nestly helps you project your savings, 401(k), Social Security, Medicare costs, and investments over time — guiding you to build a secure financial future.
           </Text>
         </View>
       </LinearGradient>
+
+      {/* ⚡ QUICK START SECTION - Get Results in 8 Seconds */}
+      <QuickStartSection onNavigateTo={handleNavigate} />
 
       {/* Feature Cards Section */}
       <View style={styles.featuresSection}>

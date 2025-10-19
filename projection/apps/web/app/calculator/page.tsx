@@ -1,6 +1,6 @@
 "use client";
 
-import React, { ChangeEvent, FormEvent, SyntheticEvent, useState } from "react";
+import React, { ChangeEvent, FormEvent, SyntheticEvent, useState, useEffect } from "react";
 import { useProjectionStore } from "@projection/core";
 import { Box, Button, Grid, Slider, TextField, Typography, CircularProgress, Alert, Tabs, Tab, Switch, Card, CardContent, Container, Stack, Snackbar, Chip } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
@@ -54,6 +54,65 @@ export default function CalculatorPage() {
   const [contribution, setContribution] = useState(input?.contribution ?? 10000);
   const [rate, setRate] = useState(input?.rate ?? 7);
   const [inflation, setInflation] = useState(input?.inflation ?? 2.5);
+  const [shouldAutoCalculate, setShouldAutoCalculate] = useState(false);
+  const [autoCalcParams, setAutoCalcParams] = useState<any>(null);
+
+  // Initialize from URL parameters (from Quick Start defaults)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    
+    const params = new URLSearchParams(window.location.search);
+    const urlAge = params.get("age");
+    const urlBalance = params.get("balance");
+    const urlContribution = params.get("contribution");
+    const urlRate = params.get("rate");
+    const urlInflation = params.get("inflation");
+    const urlRetireAge = params.get("retireAge");
+    const fromDefaults = params.get("fromDefaults");
+
+    if ((urlAge || urlBalance || urlContribution || urlRate)) {
+      // URL params come as percentages, local form expects percentages
+      // Store needs decimals for calculations
+      const rateNum = urlRate ? Number(urlRate) : 7;
+      const inflationNum = urlInflation ? Number(urlInflation) : 2.5;
+      const ageNum = urlAge ? Number(urlAge) : 30;
+      const retireAgeNum = urlRetireAge ? Number(urlRetireAge) : 65;
+      const balanceNum = urlBalance ? Number(urlBalance) : 100000;
+      const contributionNum = urlContribution ? Number(urlContribution) : 15000;
+
+      // Update local form state (with percentages)
+      setAge(ageNum);
+      setBalance(balanceNum);
+      setContribution(contributionNum);
+      setRate(rateNum);
+      setInflation(inflationNum);
+      setRetireAge(retireAgeNum);
+
+      // If coming from Quick Start defaults, set flag to auto-calculate
+      if (fromDefaults === "true") {
+        setAutoCalcParams({
+          age: ageNum,
+          retireAge: retireAgeNum,
+          balance: balanceNum,
+          contribution: contributionNum,
+          rate: rateNum,
+          inflation: inflationNum,
+        });
+        setShouldAutoCalculate(true);
+      } else {
+        // Also update global store (convert percentages to decimals for calculations)
+        setInput({
+          ...input,
+          age: ageNum,
+          balance: balanceNum,
+          contribution: contributionNum,
+          rate: rateNum / 100, // Convert percentage to decimal
+          inflation: inflationNum / 100, // Convert percentage to decimal
+          retireAge: retireAgeNum,
+        });
+      }
+    }
+  }, []);
 
   // Monte Carlo form state
   const [mcInput, setMcInput] = useState<MonteCarloInput>({
@@ -211,6 +270,30 @@ export default function CalculatorPage() {
       setSeries([]);
     },
   });
+
+  // Auto-calculate when coming from Quick Start
+  useEffect(() => {
+    if (shouldAutoCalculate && autoCalcParams) {
+      const years = autoCalcParams.retireAge - autoCalcParams.age;
+      const inputObj = {
+        age: autoCalcParams.age,
+        retireAge: autoCalcParams.retireAge,
+        balance: autoCalcParams.balance,
+        contribution: autoCalcParams.contribution,
+        rate: autoCalcParams.rate,
+        inflation: autoCalcParams.inflation,
+      };
+      setInput(inputObj);
+      mutation.mutate({
+        initialBalance: autoCalcParams.balance,
+        annualContribution: autoCalcParams.contribution,
+        years,
+        annualReturn: autoCalcParams.rate / 100,
+        inflation: autoCalcParams.inflation / 100,
+      });
+      setShouldAutoCalculate(false);
+    }
+  }, [shouldAutoCalculate, autoCalcParams, mutation, setInput]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

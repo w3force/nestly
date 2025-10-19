@@ -78,6 +78,7 @@ export default function RootNavigator() {
               <LandingScreen
                 {...props}
                 onGetStarted={() => props.navigation.navigate('Start')}
+                onNavigateTo={(screen) => props.navigation.navigate(screen)}
               />
             )}
           </Stack.Screen>

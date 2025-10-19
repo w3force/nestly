@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView, View, StyleSheet } from "react-native";
 import Slider from '@react-native-community/slider';
 import {
@@ -8,14 +8,17 @@ import {
   TextInput,
   useTheme,
   Snackbar,
-  Chip,
 } from "react-native-paper";
 import { LineChart, Grid, YAxis, XAxis } from "react-native-svg-charts";
 import * as scale from "d3-scale";
 import { simulateDeterministic, useProjectionStore } from "@projection/core";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { HelpIcon } from "../components";
 import { useDeterministicBaseline } from "../contexts/DeterministicContext";
+import { SliderWithInfo } from "../components/SliderWithInfo";
+import { CompactInputField } from "../components/CompactInputField";
+import { SectionHeader } from "../components/SectionHeader";
+import { ResultsSummary } from "../components/ResultsSummary";
 
 const chartAxisTextStyle = { fontSize: 10, fill: "rgba(48, 64, 58, 0.8)" };
 const deterministicStrokeStyle = { stroke: "#69B47A", strokeWidth: 2 };
@@ -41,19 +44,36 @@ function formatCurrency(value: number | undefined): string {
   return `$${Math.round(value).toLocaleString()}`;
 }
 
+type SliderMilestone = {
+  value: number;
+  label: string;
+  description: string;
+};
+
+const MARKER_DOT_DIAMETER = 12;
+const TOOLTIP_WIDTH = 180;
+const TOOLTIP_HALF = TOOLTIP_WIDTH / 2;
+const SLIDER_HEIGHT = 40;
+const TRACK_CENTER_OFFSET = SLIDER_HEIGHT / 2 - 8; // closer alignment with track center
+const TOOLTIP_BOTTOM_OFFSET = TRACK_CENTER_OFFSET + MARKER_DOT_DIAMETER / 2 - 2;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
   content: {
     padding: 16,
-    gap: 16,
+    gap: 8,
+    paddingBottom: 120,
   },
   card: {
-    marginBottom: 0,
+    marginBottom: 12,
   },
   inputSpacing: {
     marginBottom: 12,
+  },
+  sectionContainer: {
+    marginBottom: 20,
   },
   resultText: {
     marginTop: 16,
@@ -97,11 +117,98 @@ const styles = StyleSheet.create({
     height: 220,
     flexDirection: "row",
   },
+  sliderWithMarkers: {
+    width: "100%",
+    paddingTop: 40,
+    paddingBottom: 24,
+    position: "relative",
+  },
+  sliderBase: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: SLIDER_HEIGHT,
+  },
+  sliderMarkerOverlay: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    pointerEvents: "none",
+  },
+  sliderMarkerItem: {
+    position: "absolute",
+    alignItems: "center",
+    bottom: TRACK_CENTER_OFFSET + MARKER_DOT_DIAMETER / 2,
+  },
+  sliderMarkerDot: {
+    width: MARKER_DOT_DIAMETER,
+    height: MARKER_DOT_DIAMETER,
+    borderRadius: MARKER_DOT_DIAMETER / 2,
+    borderWidth: 2,
+    borderColor: "rgba(105, 180, 122, 0.4)",
+    backgroundColor: "#ffffff",
+  },
+  sliderMarkerDotActive: {
+    borderColor: "#69B47A",
+    backgroundColor: "rgba(105, 180, 122, 0.2)",
+  },
+  sliderMarkerTooltip: {
+    position: "absolute",
+    bottom: TOOLTIP_BOTTOM_OFFSET,
+    width: TOOLTIP_WIDTH,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "rgba(48, 64, 58, 0.18)",
+    shadowColor: "#000000",
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
+    pointerEvents: "none",
+  },
+  sliderMarkerTooltipTitle: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#30403A",
+  },
+  sliderMarkerTooltipDescription: {
+    fontSize: 11,
+    color: "#60706A",
+    marginTop: 2,
+  },
+  sliderMarkerTooltipArrow: {
+    position: "absolute",
+    bottom: -6,
+    left: "50%",
+    marginLeft: -6,
+    width: 12,
+    height: 12,
+    backgroundColor: "#FFFFFF",
+    borderLeftWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: "rgba(48, 64, 58, 0.18)",
+    transform: [{ rotate: "45deg" }],
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+  },
+  calculateButton: {
+    marginBottom: 8,
+  },
 });
 
 const DeterministicTab: React.FC = () => {
   const theme = useTheme();
   const navigation = useNavigation();
+  const route = useRoute();
   const { input, setInput, result, setResult, loading, setLoading } = useProjectionStore();
   const { baseline, setBaseline } = useDeterministicBaseline();
 
@@ -113,6 +220,88 @@ const DeterministicTab: React.FC = () => {
   const [inflation, setInflation] = useState(input?.inflation ?? 2.5);
   const [error, setError] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState({ visible: false, message: '' });
+  const [activeReturnMilestone, setActiveReturnMilestone] = useState<SliderMilestone | null>(null);
+  const [activeInflationMilestone, setActiveInflationMilestone] = useState<SliderMilestone | null>(null);
+  const [returnSliderWidth, setReturnSliderWidth] = useState(0);
+  const [inflationSliderWidth, setInflationSliderWidth] = useState(0);
+
+  // Initialize from route parameters (from Quick Start defaults)
+  useEffect(() => {
+    const params = route.params as any;
+    if (params?.age || params?.balance || params?.contribution) {
+      const paramAge = params.age ?? input?.age ?? 30;
+      const paramRetireAge = params.retireAge ?? input?.retireAge ?? 65;
+      const paramBalance = params.balance ?? input?.balance ?? 50000;
+      const paramContribution = params.contribution ?? input?.contribution ?? 10000;
+      const paramRate = params.rate ?? input?.rate ?? 7;
+      const paramInflation = params.inflation ?? input?.inflation ?? 2.5;
+
+      setAge(paramAge);
+      setRetireAge(paramRetireAge);
+      setBalance(paramBalance);
+      setContribution(paramContribution);
+      setRate(paramRate);
+      setInflation(paramInflation);
+
+      // If coming from Quick Start defaults, auto-calculate
+      if (params.fromDefaults === true || params.fromDefaults === 'true') {
+        setLoading(true);
+        setError(null);
+
+        try {
+          const years = paramRetireAge - paramAge;
+          const calculationResult = simulateDeterministic({
+            initialBalance: paramBalance,
+            annualContribution: paramContribution,
+            years,
+            annualReturn: paramRate / 100,
+            inflation: paramInflation / 100,
+          });
+          setResult(calculationResult);
+        } catch (err) {
+          setError("Calculation failed");
+        } finally {
+          setLoading(false);
+        }
+      }
+    }
+  }, [route.params, setInput, setResult, setLoading]);
+
+  const returnMilestones = useMemo<SliderMilestone[]>(() => [
+    {
+      value: 5,
+      label: "5% • Low",
+      description: "Conservative assumption; aligns with cautious portfolio mix.",
+    },
+    {
+      value: 8,
+      label: "8% • Average",
+      description: "Historic long-term market average for balanced portfolios.",
+    },
+    {
+      value: 12,
+      label: "12% • High",
+      description: "Aggressive expectation; assumes strong equity performance.",
+    },
+  ], []);
+
+  const inflationMilestones = useMemo<SliderMilestone[]>(() => [
+    {
+      value: 2,
+      label: "2% • Target",
+      description: "Matches Federal Reserve long-term target inflation.",
+    },
+    {
+      value: 3.5,
+      label: "3.5% • Elevated",
+      description: "Reflects periods of moderate inflation pressure.",
+    },
+    {
+      value: 5,
+      label: "5% • High",
+      description: "High inflation environment; plan for higher expenses.",
+    },
+  ], []);
 
   useEffect(() => {
     setInput({ age, retireAge, balance, contribution, rate, inflation });
@@ -145,6 +334,48 @@ const DeterministicTab: React.FC = () => {
     }
   };
 
+  const updateReturnMilestone = useCallback(
+    (value: number) => {
+      const proximity = 0.4;
+      const match = returnMilestones.find((milestone) => Math.abs(milestone.value - value) <= proximity);
+      setActiveReturnMilestone(match ?? null);
+    },
+    [returnMilestones],
+  );
+
+  const updateInflationMilestone = useCallback(
+    (value: number) => {
+      const proximity = 0.25;
+      const match = inflationMilestones.find((milestone) => Math.abs(milestone.value - value) <= proximity);
+      setActiveInflationMilestone(match ?? null);
+    },
+    [inflationMilestones],
+  );
+
+  const handleRateChange = useCallback(
+    (value: number) => {
+      setRate(value);
+      updateReturnMilestone(value);
+    },
+    [updateReturnMilestone],
+  );
+
+  const handleInflationChange = useCallback(
+    (value: number) => {
+      setInflation(value);
+      updateInflationMilestone(value);
+    },
+    [updateInflationMilestone],
+  );
+
+  useEffect(() => {
+    updateReturnMilestone(rate);
+  }, [rate, updateReturnMilestone]);
+
+  useEffect(() => {
+    updateInflationMilestone(inflation);
+  }, [inflation, updateInflationMilestone]);
+
   const handleSaveAsBaseline = () => {
     setBaseline({ age, retireAge, balance, contribution, rate });
     setSnackbar({ visible: true, message: '✓ Saved as baseline' });
@@ -169,175 +400,186 @@ const DeterministicTab: React.FC = () => {
           subtitle="Deterministic projection"
         />
         <Card.Content>
-          {/* Age Input */}
-          <View style={styles.inputSpacing}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <Text variant="bodyMedium" style={{ fontWeight: '500' }}>Current Age</Text>
-              <HelpIcon topicId="deterministic_age" />
-            </View>
-            <TextInput
-              label="Age"
-              value={age.toString()}
-              keyboardType="numeric"
-              onChangeText={value => setAge(Number(value || 0))}
-              mode="outlined"
-              outlineColor={theme.colors.secondary}
-              activeOutlineColor={theme.colors.primary}
+          {/* Personal Information Section */}
+          <View style={styles.sectionContainer}>
+            <SectionHeader 
+              title="Personal Information" 
+              subtitle="Your age and retirement timeline"
             />
-          </View>
-
-          {/* Retirement Age Input */}
-          <View style={styles.inputSpacing}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <Text variant="bodyMedium" style={{ fontWeight: '500' }}>Retirement Age</Text>
-              <HelpIcon topicId="deterministic_retirement_age" />
-            </View>
-            <TextInput
+            
+            <CompactInputField
+              label="Current Age"
+              value={age.toString()}
+              onChangeText={value => setAge(Number(value || 0))}
+              keyboardType="numeric"
+              helpIcon={<HelpIcon topicId="deterministic_age" />}
+            />
+            
+            <CompactInputField
               label="Retirement Age"
               value={retireAge.toString()}
-              keyboardType="numeric"
               onChangeText={value => setRetireAge(Number(value || 0))}
-              mode="outlined"
-              outlineColor={theme.colors.secondary}
-              activeOutlineColor={theme.colors.primary}
-            />
-          </View>
-
-          {/* Balance Input */}
-          <View style={styles.inputSpacing}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <Text variant="bodyMedium" style={{ fontWeight: '500' }}>Current Balance</Text>
-              <HelpIcon topicId="deterministic_current_balance" />
-            </View>
-            <TextInput
-              label="Current Balance ($)"
-              value={balance.toString()}
               keyboardType="numeric"
+              helpIcon={<HelpIcon topicId="deterministic_retirement_age" />}
+            />
+          </View>
+
+          {/* Savings Section */}
+          <View style={styles.sectionContainer}>
+            <SectionHeader 
+              title="Current Savings" 
+              subtitle="Your starting balance"
+            />
+            
+            <CompactInputField
+              label="Current Balance"
+              value={balance.toString()}
               onChangeText={value => setBalance(Number(value || 0))}
-              mode="outlined"
-              outlineColor={theme.colors.secondary}
-              activeOutlineColor={theme.colors.primary}
+              keyboardType="numeric"
+              helpIcon={<HelpIcon topicId="deterministic_current_balance" />}
             />
           </View>
 
-          {/* Contribution Slider - 2025 Limits with Color Coding */}
-          <View style={{ marginBottom: 16 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <Text variant="bodyMedium" style={{ fontWeight: '500' }}>Annual Contribution: ${(contribution / 1000).toFixed(1)}k</Text>
-                <View style={{
-                  backgroundColor: contribution <= 23500 ? '#69B47A' : age >= 50 && contribution <= 30500 ? '#FFB74D' : contribution > 30500 || (age < 50 && contribution > 23500) ? '#FF6B6B' : '#69B47A',
-                  paddingHorizontal: 8,
-                  paddingVertical: 2,
-                  borderRadius: 12,
-                }}>
-                  <Text style={{ color: '#fff', fontSize: 11, fontWeight: '600' }}>
-                    {contribution <= 23500 ? '2025 Limit' : age >= 50 && contribution <= 30500 ? 'Catch-up' : 'Over Limit'}
-                  </Text>
-                </View>
-              </View>
-              <HelpIcon topicId="deterministic_annual_contribution" />
-            </View>
-            <Slider
-              style={{ width: '100%', height: 40 }}
-              minimumValue={0}
-              maximumValue={age >= 50 ? 30500 : 23500}
-              step={500}
+          {/* Contribution Slider with info */}
+          <View style={styles.sectionContainer}>
+            <SectionHeader 
+              title="Annual Contributions" 
+              subtitle="How much you contribute yearly"
+            />
+            
+            <SliderWithInfo
+              title="Annual Contribution:"
               value={contribution}
+              min={0}
+              max={age >= 50 ? 30500 : 23500}
+              step={500}
+              suffix=" ($)"
               onValueChange={setContribution}
-              minimumTrackTintColor="#69B47A"
-              maximumTrackTintColor="#E0E0E0"
+              trackColor="#69B47A"
+              badge={{
+                label: contribution <= 23500 ? '2025 Limit' : age >= 50 && contribution <= 30500 ? 'Catch-up (50+)' : 'Over Limit',
+                color: contribution <= 23500 ? '#69B47A' : age >= 50 && contribution <= 30500 ? '#FFB74D' : '#FF6B6B',
+              }}
+              rangeIndicators={[
+                { label: '$0', value: 0 },
+                { label: '$23.5k (2025)', value: 23500 },
+                ...(age >= 50 ? [{ label: '$30.5k (50+)', value: 30500 }] : []),
+              ]}
+              infoBox={{
+                title: contribution <= 23500 ? '✓ Within 2025 Limit' : age >= 50 && contribution <= 30500 ? '✓ Catch-up Eligible' : '⚠ Over Contribution Limit',
+                description: contribution <= 23500 
+                  ? 'You can contribute up to $23,500 in 2025 (standard limit).'
+                  : age >= 50 && contribution <= 30500
+                  ? `You're 50+, so you can contribute up to $30,500 ($23.5k + $7k catch-up).`
+                  : 'Your contribution exceeds the IRS limit. Consider reducing it.',
+                backgroundColor: contribution <= 23500 
+                  ? 'rgba(105, 180, 122, 0.1)' 
+                  : age >= 50 && contribution <= 30500
+                  ? 'rgba(255, 183, 77, 0.1)'
+                  : 'rgba(255, 107, 107, 0.1)',
+              }}
             />
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
-              <Text style={{ fontSize: 10, color: '#999' }}>$0</Text>
-              <Text style={{ fontSize: 10, color: '#999' }}>$23.5k (2025)</Text>
-              {age >= 50 && <Text style={{ fontSize: 10, color: '#999' }}>$30.5k (50+)</Text>}
-            </View>
           </View>
 
-          {/* Return Rate Slider - Color Coded */}
-          <View style={{ marginBottom: 16 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <Text variant="bodyMedium" style={{ fontWeight: '500' }}>Expected Return: {rate.toFixed(1)}%</Text>
-                <View style={{
-                  backgroundColor: rate < 5 ? '#FF6B6B' : rate <= 8 ? '#FFB74D' : '#69B47A',
-                  paddingHorizontal: 8,
-                  paddingVertical: 2,
-                  borderRadius: 12,
-                }}>
-                  <Text style={{ color: '#fff', fontSize: 11, fontWeight: '600' }}>
-                    {rate < 5 ? 'Low' : rate <= 8 ? 'Average' : 'High'}
-                  </Text>
-                </View>
-              </View>
-              <HelpIcon topicId="deterministic_expected_return" />
-            </View>
-            <Slider
-              style={{ width: '100%', height: 40 }}
-              minimumValue={0}
-              maximumValue={15}
-              step={0.5}
+          {/* Return Rate Slider with info */}
+          <View style={styles.sectionContainer}>
+            <SectionHeader 
+              title="Investment Returns" 
+              subtitle="Expected annual return rate"
+            />
+            
+            <SliderWithInfo
+              title="Expected Return:"
               value={rate}
-              onValueChange={setRate}
-              minimumTrackTintColor={rate < 5 ? '#FF6B6B' : rate <= 8 ? '#FFB74D' : '#69B47A'}
-              maximumTrackTintColor="#E0E0E0"
+              min={0}
+              max={15}
+              step={0.5}
+              suffix="%"
+              onValueChange={handleRateChange}
+              trackColor={rate < 5 ? '#FF6B6B' : rate <= 8 ? '#FFB74D' : '#69B47A'}
+              badge={{
+                label: rate < 5 ? 'Conservative' : rate <= 8 ? 'Balanced' : 'Aggressive',
+                color: rate < 5 ? '#FF6B6B' : rate <= 8 ? '#FFB74D' : '#69B47A',
+              }}
+              rangeIndicators={[
+                { label: '0%', value: 0 },
+                { label: '5% (Low)', value: 5 },
+                { label: '8% (Avg)', value: 8 },
+                { label: '15%', value: 15 },
+              ]}
+              milestones={returnMilestones}
+              infoBox={{
+                title: rate < 5 ? '🛡️ Conservative Strategy' : rate <= 8 ? '⚖️ Balanced Approach' : '📈 Aggressive Growth',
+                description: rate < 5 
+                  ? 'Lower expected returns; suitable for risk-averse investors or near retirement.'
+                  : rate <= 8
+                  ? 'Moderate returns reflecting historical market averages; suitable for most investors.'
+                  : 'Higher expected returns; assumes strong equity performance and higher risk tolerance.',
+                backgroundColor: rate < 5 
+                  ? 'rgba(255, 107, 107, 0.1)' 
+                  : rate <= 8
+                  ? 'rgba(255, 183, 77, 0.1)'
+                  : 'rgba(105, 180, 122, 0.1)',
+              }}
             />
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
-              <Text style={{ fontSize: 10, color: '#999' }}>0%</Text>
-              <Text style={{ fontSize: 10, color: '#999' }}>5% (Low)</Text>
-              <Text style={{ fontSize: 10, color: '#999' }}>8% (Avg)</Text>
-              <Text style={{ fontSize: 10, color: '#999' }}>15%</Text>
-            </View>
           </View>
 
-          {/* Inflation Slider - Color Coded */}
-          <View style={{ marginBottom: 16 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <Text variant="bodyMedium" style={{ fontWeight: '500' }}>Inflation: {inflation.toFixed(1)}%</Text>
-                <View style={{
-                  backgroundColor: inflation < 2 ? '#69B47A' : inflation <= 4 ? '#FFB74D' : '#FF6B6B',
-                  paddingHorizontal: 8,
-                  paddingVertical: 2,
-                  borderRadius: 12,
-                }}>
-                  <Text style={{ color: '#fff', fontSize: 11, fontWeight: '600' }}>
-                    {inflation < 2 ? 'Good' : inflation <= 4 ? 'Normal' : 'High'}
-                  </Text>
-                </View>
-              </View>
-              <HelpIcon topicId="deterministic_inflation" />
-            </View>
-            <Slider
-              style={{ width: '100%', height: 40 }}
-              minimumValue={0}
-              maximumValue={6}
-              step={0.1}
+          {/* Inflation Slider with info */}
+          <View style={styles.sectionContainer}>
+            <SectionHeader 
+              title="Inflation Rate" 
+              subtitle="Expected annual inflation"
+            />
+            
+            <SliderWithInfo
+              title="Inflation Rate:"
               value={inflation}
-              onValueChange={setInflation}
-              minimumTrackTintColor={inflation < 2 ? '#69B47A' : inflation <= 4 ? '#FFB74D' : '#FF6B6B'}
-              maximumTrackTintColor="#E0E0E0"
+              min={0}
+              max={6}
+              step={0.1}
+              suffix="%"
+              onValueChange={handleInflationChange}
+              trackColor={inflation < 2 ? '#69B47A' : inflation <= 4 ? '#FFB74D' : '#FF6B6B'}
+              badge={{
+                label: inflation < 2 ? 'Low' : inflation <= 4 ? 'Moderate' : 'High',
+                color: inflation < 2 ? '#69B47A' : inflation <= 4 ? '#FFB74D' : '#FF6B6B',
+              }}
+              rangeIndicators={[
+                { label: '0%', value: 0 },
+                { label: '2% (Target)', value: 2 },
+                { label: '4% (Moderate)', value: 4 },
+                { label: '6%', value: 6 },
+              ]}
+              milestones={inflationMilestones}
+              infoBox={{
+                title: inflation < 2 ? '✓ Low Inflation' : inflation <= 4 ? '⚠ Moderate Inflation' : '🔴 High Inflation',
+                description: inflation < 2 
+                  ? 'Strong purchasing power preservation; your $1 today buys nearly as much in the future.'
+                  : inflation <= 4
+                  ? 'Normal inflation range; your purchasing power will gradually decline.'
+                  : 'High inflation environment; plan for significantly higher expenses in the future.',
+                backgroundColor: inflation < 2 
+                  ? 'rgba(105, 180, 122, 0.1)' 
+                  : inflation <= 4
+                  ? 'rgba(255, 183, 77, 0.1)'
+                  : 'rgba(255, 107, 107, 0.1)',
+              }}
             />
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
-              <Text style={{ fontSize: 10, color: '#999' }}>0%</Text>
-              <Text style={{ fontSize: 10, color: '#999' }}>2% (Good)</Text>
-              <Text style={{ fontSize: 10, color: '#999' }}>4% (Normal)</Text>
-              <Text style={{ fontSize: 10, color: '#999' }}>6%</Text>
-            </View>
           </View>
 
+          {/* Buttons */}
           <Button
             mode="contained"
             onPress={handleCalculate}
             loading={loading}
             disabled={loading}
+            style={styles.calculateButton}
           >
-            Calculate
+            Calculate Projection
           </Button>
 
           {result && (
-            <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+            <View style={styles.actionButtons}>
               <Button
                 mode="outlined"
                 onPress={handleSaveAsBaseline}
@@ -364,48 +606,57 @@ const DeterministicTab: React.FC = () => {
       </Card>
 
       {result && (
-        <Card style={styles.card}>
-          <Card.Title title="Deterministic Projection" />
-          <Card.Content>
-            <View style={styles.chartContainer}>
-              <YAxis
-                data={result.nominalBalances}
-                contentInset={{ top: 20, bottom: 20 }}
-                svg={chartAxisTextStyle}
-                numberOfTicks={6}
-                formatLabel={formatYAxisLabel}
-              />
-              <View style={{ flex: 1, marginLeft: 8 }}>
-                <LineChart
-                  style={{ flex: 1 }}
+        <>
+          <ResultsSummary
+            projectedBalance={result.nominalBalances[result.nominalBalances.length - 1]}
+            purchasingPower={(result.nominalBalances[result.nominalBalances.length - 1] || 0) / Math.pow(1 + inflation / 100, retireAge - age)}
+            yearsToRetirement={retireAge - age}
+            totalContributions={contribution * (retireAge - age)}
+          />
+
+          <Card style={styles.card}>
+            <Card.Title title="Deterministic Projection" />
+            <Card.Content>
+              <View style={styles.chartContainer}>
+                <YAxis
                   data={result.nominalBalances}
-                  svg={deterministicStrokeStyle}
                   contentInset={{ top: 20, bottom: 20 }}
-                >
-                  <Grid />
-                </LineChart>
-                <XAxis
-                  style={{ marginTop: 8 }}
-                  data={result.nominalBalances}
-                  scale={scale.scaleLinear}
-                  formatLabel={formatXAxisLabel}
-                  contentInset={{ left: 10, right: 10 }}
                   svg={chartAxisTextStyle}
+                  numberOfTicks={6}
+                  formatLabel={formatYAxisLabel}
                 />
+                <View style={{ flex: 1, marginLeft: 8 }}>
+                  <LineChart
+                    style={{ flex: 1 }}
+                    data={result.nominalBalances}
+                    svg={deterministicStrokeStyle}
+                    contentInset={{ top: 20, bottom: 20 }}
+                  >
+                    <Grid />
+                  </LineChart>
+                  <XAxis
+                    style={{ marginTop: 8 }}
+                    data={result.nominalBalances}
+                    scale={scale.scaleLinear}
+                    formatLabel={formatXAxisLabel}
+                    contentInset={{ left: 10, right: 10 }}
+                    svg={chartAxisTextStyle}
+                  />
+                </View>
               </View>
-            </View>
-            <View style={styles.finalResultCard}>
-              <Text style={styles.finalResultTitle}>Final Balance at Retirement</Text>
-              <Text style={styles.finalResultValue}>
-                {formatCurrency(result.nominalBalances.at(-1))}
-              </Text>
-              <Text style={styles.realBalanceText}>Inflation-Adjusted (Real Value):</Text>
-              <Text style={styles.realBalanceValue}>
-                {formatCurrency((result.nominalBalances.at(-1) || 0) / Math.pow(1 + inflation / 100, retireAge - age))}
-              </Text>
-            </View>
-          </Card.Content>
-        </Card>
+              <View style={styles.finalResultCard}>
+                <Text style={styles.finalResultTitle}>Final Balance at Retirement</Text>
+                <Text style={styles.finalResultValue}>
+                  {formatCurrency(result.nominalBalances[result.nominalBalances.length - 1])}
+                </Text>
+                <Text style={styles.realBalanceText}>Inflation-Adjusted (Real Value):</Text>
+                <Text style={styles.realBalanceValue}>
+                  {formatCurrency((result.nominalBalances[result.nominalBalances.length - 1] || 0) / Math.pow(1 + inflation / 100, retireAge - age))}
+                </Text>
+              </View>
+            </Card.Content>
+          </Card>
+        </>
       )}
       </ScrollView>
       <Snackbar

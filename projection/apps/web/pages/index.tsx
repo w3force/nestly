@@ -8,6 +8,7 @@ import CalculateIcon from "@mui/icons-material/Calculate";
 import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
 import AutoGraphIcon from "@mui/icons-material/AutoGraph";
 import { LANDING_SCREEN } from "@projection/shared";
+import { QuickStartSection } from "../components/QuickStartSection";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 32 },
@@ -156,6 +157,38 @@ export default function Home() {
               )}
             </Stack>
 
+            {/* CTA Button */}
+            <motion.div
+              initial={fadeIn.initial}
+              animate={fadeIn.animate}
+              transition={{ ...fadeIn.transition, delay: 0.6 }}
+            >
+              <Button
+                component={Link}
+                href="/calculator"
+                variant="contained"
+                size="large"
+                sx={{
+                  px: 5,
+                  py: 1.5,
+                  fontSize: "1.05rem",
+                  borderRadius: 99,
+                  textTransform: "none",
+                  fontWeight: 600,
+                  backgroundColor: "#69B47A",
+                  ":hover": {
+                    backgroundColor: "#5AA468",
+                    boxShadow: "0 12px 30px rgba(105, 180, 122, 0.25)",
+                  },
+                }}
+              >
+                {heroMetadata.primaryCTA}
+              </Button>
+            </motion.div>
+
+            {/* ★ QUICK START SECTION - Get Results in 8 Seconds ★ */}
+            <QuickStartSection />
+
             {/* Feature Cards - Using Schema */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -239,35 +272,6 @@ export default function Home() {
                   </Grid>
                 ))}
               </Grid>
-            </motion.div>
-
-            {/* CTA Button */}
-            <motion.div
-              initial={fadeIn.initial}
-              animate={fadeIn.animate}
-              transition={{ ...fadeIn.transition, delay: 0.6 }}
-            >
-              <Button
-                component={Link}
-                href="/calculator"
-                variant="contained"
-                size="large"
-                sx={{
-                  px: 5,
-                  py: 1.5,
-                  fontSize: "1.05rem",
-                  borderRadius: 99,
-                  textTransform: "none",
-                  fontWeight: 600,
-                  backgroundColor: "#69B47A",
-                  ":hover": {
-                    backgroundColor: "#5AA468",
-                    boxShadow: "0 12px 30px rgba(105, 180, 122, 0.25)",
-                  },
-                }}
-              >
-                {heroMetadata.primaryCTA}
-              </Button>
             </motion.div>
           </Stack>
         </Container>

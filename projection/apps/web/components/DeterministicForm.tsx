@@ -12,13 +12,10 @@ import {
   Typography,
   Alert,
   Stack,
-  Card,
-  CardContent,
   TextField,
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
-import { SliderField } from './SliderField';
 import { ContributionSlider } from './ContributionSlider';
 import { ReturnRateSlider } from './ReturnRateSlider';
 import { InflationSlider } from './InflationSlider';
@@ -31,6 +28,8 @@ import {
   EXPECTED_RETURN_FIELD,
   INFLATION_FIELD,
 } from '@projection/shared';
+import { HelpTooltip } from './HelpTooltip';
+import { helpContent } from '../lib/helpContent';
 
 interface DeterministicFormProps {
   age: number;
@@ -76,7 +75,7 @@ export const DeterministicForm: React.FC<DeterministicFormProps> = ({
   const savingsSection = DETERMINISTIC_SCREEN.sections[1];
   const assumptionsSection = DETERMINISTIC_SCREEN.sections[2];
   const webDefaults = DETERMINISTIC_SCREEN.platformVariants?.web?.sliderDefaults;
-  const theme = DETERMINISTIC_SCREEN.metadata?.sliderConfiguration?.theme;
+  const calculatorHelp = helpContent.calculator;
 
   return (
     <Box component="form" onSubmit={onSubmit} sx={{ mb: 3, mt: 2 }}>
@@ -113,7 +112,20 @@ export const DeterministicForm: React.FC<DeterministicFormProps> = ({
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6}>
             <TextField
-              label={AGE_FIELD.label}
+              label={
+                <Box
+                  component="span"
+                  sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
+                >
+                  {AGE_FIELD.label}
+                  <HelpTooltip
+                    title={calculatorHelp.currentAge.title}
+                    description={calculatorHelp.currentAge.description}
+                    size="small"
+                    placement="right"
+                  />
+                </Box>
+              }
               type="number"
               value={age}
               onChange={(e) => setAge(Number(e.target.value))}
@@ -125,7 +137,20 @@ export const DeterministicForm: React.FC<DeterministicFormProps> = ({
           </Grid>
           <Grid item xs={12} sm={6}>
             <TextField
-              label={RETIREMENT_AGE_FIELD.label}
+              label={
+                <Box
+                  component="span"
+                  sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
+                >
+                  {RETIREMENT_AGE_FIELD.label}
+                  <HelpTooltip
+                    title={calculatorHelp.retirementAge.title}
+                    description={calculatorHelp.retirementAge.description}
+                    size="small"
+                    placement="right"
+                  />
+                </Box>
+              }
               type="number"
               value={retireAge}
               onChange={(e) => setRetireAge(Number(e.target.value))}
@@ -164,7 +189,20 @@ export const DeterministicForm: React.FC<DeterministicFormProps> = ({
 
         <Stack spacing={2}>
           <TextField
-            label={CURRENT_BALANCE_FIELD.label}
+            label={
+              <Box
+                component="span"
+                sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
+              >
+                {CURRENT_BALANCE_FIELD.label}
+                <HelpTooltip
+                  title={calculatorHelp.currentBalance.title}
+                  description={calculatorHelp.currentBalance.description}
+                  size="small"
+                  placement="right"
+                />
+              </Box>
+            }
             type="number"
             value={balance}
             onChange={(e) => setBalance(Number(e.target.value))}
@@ -184,6 +222,10 @@ export const DeterministicForm: React.FC<DeterministicFormProps> = ({
             onChange={setContribution}
             field={ANNUAL_CONTRIBUTION_FIELD}
             platformDefaults={webDefaults}
+            help={{
+              title: calculatorHelp.annualContribution.title,
+              description: calculatorHelp.annualContribution.description,
+            }}
           />
         </Stack>
       </Box>
@@ -219,6 +261,10 @@ export const DeterministicForm: React.FC<DeterministicFormProps> = ({
             onChange={setRate}
             field={EXPECTED_RETURN_FIELD}
             platformDefaults={webDefaults}
+            help={{
+              title: calculatorHelp.expectedReturn.title,
+              description: calculatorHelp.expectedReturn.description,
+            }}
           />
 
           {/* Inflation Slider with Inflation Level Assessment */}
@@ -227,6 +273,10 @@ export const DeterministicForm: React.FC<DeterministicFormProps> = ({
             onChange={setInflation}
             field={INFLATION_FIELD}
             platformDefaults={webDefaults}
+            help={{
+              title: calculatorHelp.inflation.title,
+              description: calculatorHelp.inflation.description,
+            }}
           />
         </Stack>
       </Box>
