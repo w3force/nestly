@@ -139,7 +139,9 @@ export default function WhatIfSimulator() {
   const baselineData = calculateProjection(baseline);
   const whatIfData = calculateProjection(currentScenario);
 
-  const finalDiff = whatIfData[whatIfData.length - 1].balance - baselineData[baselineData.length - 1].balance;
+  const finalDiff = (whatIfData.length > 0 && baselineData.length > 0) 
+    ? whatIfData[whatIfData.length - 1].balance - baselineData[baselineData.length - 1].balance
+    : 0;
 
   const chartOption = {
     tooltip: {
@@ -259,6 +261,14 @@ export default function WhatIfSimulator() {
     if (activeTab === 0) return [];
     return baselineData.map((base, index) => {
       const whatIf = whatIfData[index];
+      if (!whatIf) {
+        return {
+          age: base.age,
+          baseline: base.balance,
+          whatIf: 0,
+          diff: 0,
+        };
+      }
       return {
         age: base.age,
         baseline: base.balance,

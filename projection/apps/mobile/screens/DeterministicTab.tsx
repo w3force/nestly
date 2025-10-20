@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { ScrollView, View, StyleSheet } from "react-native";
 import Slider from '@react-native-community/slider';
 import {
@@ -224,6 +224,7 @@ const DeterministicTab: React.FC = () => {
   const [activeInflationMilestone, setActiveInflationMilestone] = useState<SliderMilestone | null>(null);
   const [returnSliderWidth, setReturnSliderWidth] = useState(0);
   const [inflationSliderWidth, setInflationSliderWidth] = useState(0);
+  const [showResults, setShowResults] = useState(false); // Only show results when Calculate is clicked
 
   // Initialize from route parameters (from Quick Start defaults)
   useEffect(() => {
@@ -315,6 +316,7 @@ const DeterministicTab: React.FC = () => {
 
     setLoading(true);
     setError(null);
+    setShowResults(true); // Show results when user clicks Calculate
 
     try {
       const years = retireAge - age;
@@ -326,6 +328,10 @@ const DeterministicTab: React.FC = () => {
         inflation: inflation / 100,
       });
       setResult(calculationResult);
+      // Update the ref to track what was just submitted
+      lastSubmittedRef.current = {
+        age, retireAge, balance, contribution, rate, inflation
+      };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Calculation failed";
       setError(errorMessage);
@@ -375,6 +381,61 @@ const DeterministicTab: React.FC = () => {
   useEffect(() => {
     updateInflationMilestone(inflation);
   }, [inflation, updateInflationMilestone]);
+
+  // Auto-recalculate when parameters change (only if result already exists)
+  const lastSubmittedRef = useRef<{
+    age: number;
+    retireAge: number;
+    balance: number;
+    contribution: number;
+    rate: number;
+    inflation: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!result || !lastSubmittedRef.current) {
+      return; // Don't recalculate until we have initial results
+    }
+
+    // Debounce to avoid excessive recalculations while sliding
+    const debounceTimer = setTimeout(() => {
+      const last = lastSubmittedRef.current!;
+      
+      // Check if ANY parameter changed
+      const paramsChanged = 
+        rate !== last.rate || 
+        inflation !== last.inflation ||
+        age !== last.age || 
+        retireAge !== last.retireAge ||
+        balance !== last.balance || 
+        contribution !== last.contribution;
+
+      if (paramsChanged) {
+        try {
+          const years = retireAge - age;
+          console.log("Auto-recalculating with inflation:", inflation); // Debug log
+          const calculationResult = simulateDeterministic({
+            initialBalance: balance,
+            annualContribution: contribution,
+            years,
+            annualReturn: rate / 100,
+            inflation: inflation / 100,
+          });
+          console.log("New result with inflation", inflation, ":", calculationResult); // Debug log
+          setResult(calculationResult);
+          // Update the ref to the new values
+          lastSubmittedRef.current = {
+            age, retireAge, balance, contribution, rate, inflation
+          };
+        } catch (err) {
+          // Silently fail on auto-recalculation to avoid disrupting the UI
+          console.error("Auto-recalculation failed:", err);
+        }
+      }
+    }, 300); // Debounce for 300ms
+
+    return () => clearTimeout(debounceTimer);
+  }, [rate, inflation, age, retireAge, balance, contribution, result]);
 
   const handleSaveAsBaseline = () => {
     setBaseline({ age, retireAge, balance, contribution, rate });
@@ -605,11 +666,11 @@ const DeterministicTab: React.FC = () => {
         </Card.Content>
       </Card>
 
-      {result && (
+      {showResults && result && (
         <>
           <ResultsSummary
-            projectedBalance={result.nominalBalances[result.nominalBalances.length - 1]}
-            purchasingPower={(result.nominalBalances[result.nominalBalances.length - 1] || 0) / Math.pow(1 + inflation / 100, retireAge - age)}
+            projectedBalance={result.realBalances[result.realBalances.length - 1]}
+            nominalBalance={result.nominalBalances[result.nominalBalances.length - 1]}
             yearsToRetirement={retireAge - age}
             totalContributions={contribution * (retireAge - age)}
           />
@@ -645,13 +706,13 @@ const DeterministicTab: React.FC = () => {
                 </View>
               </View>
               <View style={styles.finalResultCard}>
-                <Text style={styles.finalResultTitle}>Final Balance at Retirement</Text>
+                <Text style={styles.finalResultTitle}>Inflation-Adjusted Balance (Today's Dollars)</Text>
+                <Text style={styles.realBalanceValue}>
+                  {formatCurrency(result.realBalances[result.realBalances.length - 1])}
+                </Text>
+                <Text style={styles.realBalanceText}>Nominal Balance (Future Dollars):</Text>
                 <Text style={styles.finalResultValue}>
                   {formatCurrency(result.nominalBalances[result.nominalBalances.length - 1])}
-                </Text>
-                <Text style={styles.realBalanceText}>Inflation-Adjusted (Real Value):</Text>
-                <Text style={styles.realBalanceValue}>
-                  {formatCurrency((result.nominalBalances[result.nominalBalances.length - 1] || 0) / Math.pow(1 + inflation / 100, retireAge - age))}
                 </Text>
               </View>
             </Card.Content>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { ChangeEvent, FormEvent, SyntheticEvent, useState, useEffect } from "react";
+import React, { ChangeEvent, FormEvent, SyntheticEvent, useState, useEffect, useRef } from "react";
 import { useProjectionStore } from "@projection/core";
 import { Box, Button, Grid, Slider, TextField, Typography, CircularProgress, Alert, Tabs, Tab, Switch, Card, CardContent, Container, Stack, Snackbar, Chip } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
@@ -263,6 +263,10 @@ export default function CalculatorPage() {
           data: data.realBalances,
         },
       ]);
+      // Update the ref to track what was just submitted
+      lastSubmittedRef.current = {
+        age, retireAge, balance, contribution, rate, inflation
+      };
     },
     onError: () => {
       setResult(null);
@@ -295,6 +299,53 @@ export default function CalculatorPage() {
     }
   }, [shouldAutoCalculate, autoCalcParams, mutation, setInput]);
 
+  // Auto-recalculate when any parameter changes (with debounce to avoid excessive calls)
+  // Note: We use a ref to track the last submitted values to avoid re-triggering when input state updates
+  const lastSubmittedRef = useRef<{
+    age: number;
+    retireAge: number;
+    balance: number;
+    contribution: number;
+    rate: number;
+    inflation: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!result || !lastSubmittedRef.current) {
+      return; // Don't recalculate until we have initial results
+    }
+
+    const debounceTimer = setTimeout(() => {
+      const last = lastSubmittedRef.current!;
+      
+      // Check if parameters actually changed
+      const paramsChanged = 
+        rate !== last.rate || 
+        inflation !== last.inflation || 
+        age !== last.age || 
+        retireAge !== last.retireAge ||
+        balance !== last.balance || 
+        contribution !== last.contribution;
+
+      if (paramsChanged) {
+        const years = retireAge - age;
+        mutation.mutate({
+          initialBalance: balance,
+          annualContribution: contribution,
+          years,
+          annualReturn: rate / 100,
+          inflation: inflation / 100,
+        });
+        // Update the ref to the new values to prevent re-triggering
+        lastSubmittedRef.current = {
+          age, retireAge, balance, contribution, rate, inflation
+        };
+      }
+    }, 500); // Debounce for 500ms to avoid too many calls while sliding
+
+    return () => clearTimeout(debounceTimer);
+  }, [age, retireAge, balance, contribution, rate, inflation, result, mutation]);
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const years = retireAge - age;
@@ -307,6 +358,12 @@ export default function CalculatorPage() {
       inflation,
     };
     setInput(inputObj);
+    
+    // Initialize the ref so auto-recalculation can work
+    lastSubmittedRef.current = {
+      age, retireAge, balance, contribution, rate, inflation
+    };
+    
     mutation.mutate({
       initialBalance: balance,
       annualContribution: contribution,
@@ -511,6 +568,27 @@ export default function CalculatorPage() {
                         <Box>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
                             <Typography variant="body2" sx={{ color: "rgba(48, 64, 58, 0.72)", fontWeight: 600 }}>
+                              Real (Today's $)
+                            </Typography>
+                            <HelpTooltip
+                              title={helpContent.general.realDollars.title}
+                              description={helpContent.general.realDollars.description}
+                              size="small"
+                            />
+                          </Box>
+                          <Typography variant="h5" sx={{ color: "#30403A", fontWeight: 700 }}>
+                            $
+                            {result.realBalances
+                              .at(-1)
+                              ?.toLocaleString(undefined, { maximumFractionDigits: 0 }) ?? "0"}
+                          </Typography>
+                          <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: "rgba(48,64,58,0.65)" }}>
+                            Reflects today's buying power with your inflation assumption.
+                          </Typography>
+                        </Box>
+                        <Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                            <Typography variant="body2" sx={{ color: "rgba(48, 64, 58, 0.72)", fontWeight: 600 }}>
                               Nominal (Future $)
                             </Typography>
                             <HelpTooltip
@@ -525,23 +603,8 @@ export default function CalculatorPage() {
                               .at(-1)
                               ?.toLocaleString(undefined, { maximumFractionDigits: 0 }) ?? "0"}
                           </Typography>
-                        </Box>
-                        <Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                            <Typography variant="body2" sx={{ color: "rgba(48, 64, 58, 0.72)", fontWeight: 600 }}>
-                              Real (Today's $)
-                            </Typography>
-                            <HelpTooltip
-                              title={helpContent.general.realDollars.title}
-                              description={helpContent.general.realDollars.description}
-                              size="small"
-                            />
-                          </Box>
-                          <Typography variant="h6" sx={{ color: "#30403A" }}>
-                            $
-                            {result.realBalances
-                              .at(-1)
-                              ?.toLocaleString(undefined, { maximumFractionDigits: 0 }) ?? "0"}
+                          <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: "rgba(48,64,58,0.65)" }}>
+                            Future dollars before adjusting for inflation.
                           </Typography>
                         </Box>
                       </Stack>

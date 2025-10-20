@@ -9,7 +9,7 @@ import { Text, Card } from 'react-native-paper';
 
 interface ResultsSummaryProps {
   projectedBalance?: number;
-  purchasingPower?: number;
+  nominalBalance?: number;
   yearsToRetirement: number;
   totalContributions?: number;
   averageGrowth?: number;
@@ -65,17 +65,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(46, 125, 50, 0.1)',
     marginVertical: 12,
   },
-  purchasingPowerText: {
-    marginTop: 12,
-    fontWeight: '600',
-    color: '#558B2F',
+  nominalText: {
+    marginTop: 8,
     fontSize: 12,
+    color: '#2E7D32',
+    fontWeight: '500',
   },
-  purchasingPowerValue: {
+  nominalValue: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#33691E',
-    marginTop: 4,
+    fontWeight: '600',
+    color: '#1B5E20',
+    marginTop: 2,
   },
 });
 
@@ -88,7 +88,7 @@ function formatCurrency(value: number | undefined): string {
 
 export const ResultsSummary: React.FC<ResultsSummaryProps> = ({
   projectedBalance,
-  purchasingPower,
+  nominalBalance,
   yearsToRetirement,
   totalContributions,
   averageGrowth,
@@ -103,7 +103,7 @@ export const ResultsSummary: React.FC<ResultsSummaryProps> = ({
       <Card style={styles.mainCard}>
         <Card.Content style={styles.cardContent}>
           {/* Main projected balance */}
-          <Text style={styles.mainLabel}>Projected Balance at Retirement</Text>
+          <Text style={styles.mainLabel}>Inflation-Adjusted Balance at Retirement</Text>
           <Text style={styles.mainValue}>{formatCurrency(projectedBalance)}</Text>
 
           {/* Metrics row */}
@@ -122,12 +122,12 @@ export const ResultsSummary: React.FC<ResultsSummaryProps> = ({
             </View>
           </View>
 
-          {/* Purchasing power */}
-          {purchasingPower && (
+          {/* Nominal reference */}
+          {nominalBalance && (
             <>
               <View style={styles.divider} />
-              <Text style={styles.purchasingPowerText}>Today's Purchasing Power</Text>
-              <Text style={styles.purchasingPowerValue}>{formatCurrency(purchasingPower)}</Text>
+              <Text style={styles.nominalText}>Nominal Balance (Future Dollars)</Text>
+              <Text style={styles.nominalValue}>{formatCurrency(nominalBalance)}</Text>
             </>
           )}
         </Card.Content>
