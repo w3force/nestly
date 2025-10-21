@@ -35,6 +35,43 @@ export const DETERMINISTIC_SCREEN: ScreenDefinition = {
       },
     },
     {
+      id: 'features',
+      title: 'Choose Your Analysis Method',
+      description: 'Three ways to analyze your retirement',
+      fields: [],
+      layout: 'grid',
+      metadata: {
+        type: 'feature-cards',
+        items: [
+          {
+            id: 'deterministic',
+            title: 'Deterministic',
+            description:
+              'Project your retirement with a single set of fixed assumptions. See one clear scenario for your financial future based on conservative estimates.',
+            cta: 'Get Started',
+            navigateTo: 'deterministic',
+          },
+          {
+            id: 'whatif',
+            title: 'What-If Analysis',
+            description:
+              'Compare multiple retirement scenarios side-by-side to explore different strategies. Understand how changes in spending or savings affect your outcomes.',
+            cta: 'Compare Scenarios',
+            navigateTo: 'whatif',
+          },
+          {
+            id: 'montecarlo',
+            title: 'Monte Carlo',
+            description:
+              'Run 10,000+ simulations to see the probability of retirement success. Get a realistic range of outcomes with best, median, and worst-case scenarios.',
+            cta: 'Run Simulations',
+            navigateTo: 'monteCarlo',
+            badge: 'PREMIUM',
+          },
+        ],
+      },
+    },
+    {
       id: 'savings',
       title: 'Savings & Contributions',
       description: 'Current balance and annual contributions',
@@ -357,6 +394,70 @@ export const LANDING_SCREEN: ScreenDefinition = {
         heroDescription: 'Nestly helps you project your savings, 401(k), Social Security, Medicare costs, and investments over time — guiding you to build a secure financial future.',
         guestWelcome: '👋 Welcome, Guest! Explore Nestly with limited features.',
         primaryCTA: 'Start Planning Now',
+        secondaryCTA: 'Sign In / Create Account',
+        secondaryLink: '/auth',
+      },
+    },
+    {
+      id: 'quickStart',
+      title: 'Quick Start',
+      description: 'Enter a few details to see an instant projection',
+      fields: [],
+      layout: 'vertical',
+      metadata: {
+        type: 'custom',
+        componentId: 'QuickStart',
+        title: '⚡ Quick Start',
+        subtitle: 'See Your Results in 8 Seconds',
+        description:
+          'Enter your age, current balance, and investment strategy to see your retirement projection instantly.',
+        ctaLabel: 'Get Detailed Analysis →',
+        footnote:
+          '📊 These are estimates based on historical market averages.\nActual results will vary based on market conditions and personal circumstances.',
+        inputLabels: {
+          age: {
+            label: 'Current Age',
+            helper: 'You have {{yearsToRetirement}} years left before retirement age',
+            placeholder: 'e.g., 35',
+          },
+          retirementAge: {
+            label: 'Target Retirement Age',
+            helper: 'When you want to retire',
+            placeholder: 'e.g., 65',
+          },
+          balance: {
+            label: 'Current 401(k) Balance',
+            helper: "This is your starting amount. We'll add your contributions and growth from here.",
+            placeholder: 'e.g., 100000',
+          },
+        },
+        strategy: {
+          heading: 'Investment Strategy',
+          presetsLabel: 'Quick presets:',
+          optionReturns: {
+            LOW_RISK: '5% return',
+            MID_RISK: '7% return',
+            HIGH_RISK: '9% return',
+          },
+        },
+        results: {
+          strategySuffix: ' Strategy',
+          retirementHeadline: 'Retirement in {{yearsToRetirement}} years',
+          retirementHeadlineRetired: 'Already retired!',
+          portfolioLabel: 'Portfolio at Age {{retirementAge}}',
+          portfolioGrowth: '+{{growth}} from growth & contributions',
+          portfolioBaseline: 'Starting amount',
+          monthlyIncomeLabel: 'Monthly Income (4% Rule)',
+          monthlyIncomeSuffix: '/month',
+          retirementDurationLabel: 'Retirement Duration',
+          retirementDurationSuffix: '({{retirementDuration}} years)',
+          retirementReadyLabel: 'Retirement Confidence',
+        },
+        readinessMessages: {
+          Comfortable: 'On track for comfortable retirement',
+          Borderline: 'May need to adjust contributions or timeline',
+          Low: 'Review your strategy and goals',
+        },
       },
     },
     {
@@ -371,21 +472,24 @@ export const LANDING_SCREEN: ScreenDefinition = {
           {
             id: 'deterministic',
             title: 'Deterministic',
-            description: 'Project your retirement with a single set of fixed assumptions. See one clear scenario for your financial future based on conservative estimates.',
+            description:
+              'Project your retirement with a single set of fixed assumptions. See one clear scenario for your financial future based on conservative estimates.',
             cta: 'Get Started',
             navigateTo: 'deterministic',
           },
           {
             id: 'whatif',
             title: 'What-If Analysis',
-            description: 'Compare multiple retirement scenarios side-by-side to explore different strategies. Understand how changes in spending or savings affect your outcomes.',
+            description:
+              'Compare multiple retirement scenarios side-by-side to explore different strategies. Understand how changes in spending or savings affect your outcomes.',
             cta: 'Compare Scenarios',
             navigateTo: 'whatif',
           },
           {
             id: 'montecarlo',
             title: 'Monte Carlo',
-            description: 'Run 10,000+ simulations to see the probability of retirement success. Get a realistic range of outcomes with best, median, and worst-case scenarios.',
+            description:
+              'Run 10,000+ simulations to see the probability of retirement success. Get a realistic range of outcomes with best, median, and worst-case scenarios.',
             cta: 'Run Simulations',
             navigateTo: 'monteCarlo',
             badge: 'PREMIUM',

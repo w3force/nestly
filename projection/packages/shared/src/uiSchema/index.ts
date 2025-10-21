@@ -10,3 +10,5 @@ export * from './categories';
 export * from './screens';
 export * from './validation';
 export * from './types';
+export * from './registry';
+export * from './utils';

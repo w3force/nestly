@@ -18,6 +18,7 @@ import {
 } from "@mui/material";
 import { motion } from "framer-motion";
 import {
+  DEFAULT_VALUES,
   calculateDefaults,
   StrategyType,
   getStrategyConfig,
@@ -34,8 +35,53 @@ const fadeInUp = {
   transition: { duration: 0.6, ease: "easeOut" as const },
 };
 
+type QuickStartReadinessMessages = Partial<Record<'Comfortable' | 'Borderline' | 'Low', string>>;
+
+export type QuickStartReadinessLevel = 'Comfortable' | 'Borderline' | 'Low';
+
+export interface QuickStartCopy {
+  label?: string;
+  helper?: string;
+  placeholder?: string;
+}
+
+export interface QuickStartInputMetadata {
+  age?: QuickStartCopy;
+  retirementAge?: QuickStartCopy;
+  balance?: QuickStartCopy;
+}
+
+export interface QuickStartStrategyMetadata {
+  heading?: string;
+  presetsLabel?: string;
+  optionReturns?: Partial<Record<StrategyType, string>>;
+}
+
+export interface QuickStartResultsMetadata {
+  strategySuffix?: string;
+  retirementHeadline?: string;
+  retirementHeadlineRetired?: string;
+  portfolioLabel?: string;
+  portfolioGrowth?: string;
+  portfolioBaseline?: string;
+  monthlyIncomeLabel?: string;
+  monthlyIncomeSuffix?: string;
+  retirementDurationLabel?: string;
+  retirementDurationSuffix?: string;
+  retirementReadyLabel?: string;
+}
+
 interface QuickStartSectionProps {
+  title?: string;
+  subtitle?: string;
+  description?: string;
   onNavigateToCalculator?: () => void;
+  ctaLabel?: string;
+  footnote?: string;
+  readinessMessages?: QuickStartReadinessMessages;
+  inputLabels?: QuickStartInputMetadata;
+  strategyMetadata?: QuickStartStrategyMetadata;
+  resultsMetadata?: QuickStartResultsMetadata;
 }
 
 /**
@@ -45,8 +91,29 @@ interface QuickStartSectionProps {
  * Shows portfolio at retirement, monthly income, retirement duration, and confidence level.
  * Users can then navigate to the calculator with all values pre-populated.
  */
-export function QuickStartSection({ onNavigateToCalculator }: QuickStartSectionProps) {
+export function QuickStartSection({
+  title = "⚡ Quick Start",
+  subtitle = "See Your Results in 8 Seconds",
+  description = "Enter your age, current balance, and investment strategy to see your retirement projection instantly",
+  onNavigateToCalculator,
+  ctaLabel,
+  footnote,
+  readinessMessages,
+  inputLabels,
+  strategyMetadata,
+  resultsMetadata,
+}: QuickStartSectionProps) {
   const router = useRouter();
+  const renderTemplate = (
+    template: string | undefined,
+    context: Record<string, string | number | undefined>
+  ): string | undefined => {
+    if (!template) return undefined;
+    return template.replace(/\{\{\s*(\w+)\s*\}\}/g, (_match, key) => {
+      const value = context[key];
+      return value !== undefined && value !== null ? String(value) : "";
+    });
+  };
   const [age, setAge] = useState(35);
   const [retirementAge, setRetirementAge] = useState(65);
   const [balance, setBalance] = useState(100000);
@@ -59,9 +126,38 @@ export function QuickStartSection({ onNavigateToCalculator }: QuickStartSectionP
   }, [age, balance, strategy, retirementAge]);
 
   const strategyConfig = getStrategyConfig(strategy);
+  const ageNum = Number(age);
+  const retirementAgeNum = Number(retirementAge);
+  const yearsToRetirement = Math.max(0, retirementAgeNum - ageNum);
+
+  const ageMeta = inputLabels?.age ?? {};
+  const retirementMeta = inputLabels?.retirementAge ?? {};
+  const balanceMeta = inputLabels?.balance ?? {};
+
+  const ageHelper =
+    renderTemplate(ageMeta.helper, { yearsToRetirement }) ??
+    `You have ${Math.max(0, retirementAgeNum - ageNum)} years until retirement age`;
+  const retirementHelper =
+    renderTemplate(retirementMeta.helper, { yearsToRetirement }) ?? "When you want to retire";
+  const balanceHelper =
+    renderTemplate(balanceMeta.helper, { yearsToRetirement }) ??
+    "This is your starting amount. We'll add your contributions and growth from here.";
+
+  const strategyHeading = strategyMetadata?.heading ?? "Investment Strategy";
+  const optionReturns = strategyMetadata?.optionReturns ?? {};
+
+  const ctaCopy = ctaLabel ?? "Get Detailed Analysis →";
+  const footnoteCopy =
+    footnote ??
+    "📊 These are estimates based on historical market averages.\nActual results will vary based on market conditions and personal circumstances.";
+  const footnoteLines = footnoteCopy.split("\n");
 
   const handleNavigateToCalculator = () => {
     if (!result) return;
+
+    if (onNavigateToCalculator) {
+      onNavigateToCalculator();
+    }
 
     const params = createCalculatorParams(result);
     const queryString = new URLSearchParams(params).toString();
@@ -73,6 +169,52 @@ export function QuickStartSection({ onNavigateToCalculator }: QuickStartSectionP
     if (percentage >= 75) return "#4CAF50";
     if (percentage >= 50) return "#FF9800";
     return "#F44336";
+  };
+
+  const growthDifference = result ? result.portfolioAtRetirement - result.balance : 0;
+  const resultContext = result
+    ? {
+        yearsToRetirement: result.yearsToRetirement,
+        retirementAge: result.retirementAge,
+        retirementDuration: result.retirementDuration,
+        retirementEndAge: result.retirementAge + result.retirementDuration,
+        strategyLabel: strategyConfig.label,
+        growth: growthDifference > 0 ? formatCurrency(growthDifference) : undefined,
+      }
+    : undefined;
+
+  const strategySuffixText = (resultsMetadata?.strategySuffix ?? " Strategy").trim();
+  const defaultRetirementHeadline = result
+    ? result.yearsToRetirement > 0
+      ? `Retirement in ${result.yearsToRetirement} years`
+      : "Already retired!"
+    : "";
+  const retirementHeadline = result
+    ? result.yearsToRetirement > 0
+      ? renderTemplate(resultsMetadata?.retirementHeadline, resultContext ?? {}) ?? defaultRetirementHeadline
+      : renderTemplate(resultsMetadata?.retirementHeadlineRetired, resultContext ?? {}) ?? defaultRetirementHeadline
+    : defaultRetirementHeadline;
+  const portfolioLabel =
+    renderTemplate(resultsMetadata?.portfolioLabel, resultContext ?? {}) ??
+    (result ? `Portfolio at Age ${result.retirementAge}` : "Portfolio at Retirement");
+  const portfolioGrowthText =
+    result && growthDifference > 0
+      ? renderTemplate(resultsMetadata?.portfolioGrowth, {
+          ...(resultContext ?? {}),
+          growth: formatCurrency(growthDifference),
+        }) ?? `+${formatCurrency(growthDifference)} from growth & contributions`
+      : resultsMetadata?.portfolioBaseline ?? "Starting amount";
+  const monthlyIncomeLabel = resultsMetadata?.monthlyIncomeLabel ?? "Monthly Income (4% Rule)";
+  const monthlyIncomeSuffix = resultsMetadata?.monthlyIncomeSuffix ?? "/month";
+  const retirementDurationLabel = resultsMetadata?.retirementDurationLabel ?? "Retirement Duration";
+  const retirementDurationSuffix =
+    renderTemplate(resultsMetadata?.retirementDurationSuffix, resultContext ?? {}) ??
+    (result ? `(${result.retirementDuration} years)` : "");
+  const retirementReadyLabel = resultsMetadata?.retirementReadyLabel ?? "Retirement Readiness";
+  const defaultReadinessCopy: QuickStartReadinessMessages = {
+    Comfortable: "On track for comfortable retirement",
+    Borderline: "May need to adjust contributions or timeline",
+    Low: "Review your strategy and goals",
   };
 
   return (
@@ -97,7 +239,7 @@ export function QuickStartSection({ onNavigateToCalculator }: QuickStartSectionP
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, justifyContent: "center" }}>
                 <LightbulbIcon sx={{ color: "#4ABDAC", fontSize: 28 }} />
                 <Typography variant="overline" sx={{ color: "#4ABDAC", fontWeight: 600 }}>
-                  ⚡ Quick Start
+                  {title}
                 </Typography>
               </Box>
               <Typography
@@ -108,10 +250,10 @@ export function QuickStartSection({ onNavigateToCalculator }: QuickStartSectionP
                   fontSize: { xs: "1.75rem", md: "2.25rem" },
                 }}
               >
-                See Your Results in 8 Seconds
+                {subtitle}
               </Typography>
               <Typography variant="body1" sx={{ color: "rgba(48, 64, 58, 0.7)", maxWidth: "60ch" }}>
-                Enter your age, current balance, and investment strategy to see your retirement projection instantly
+                {description}
               </Typography>
             </Stack>
 
@@ -123,7 +265,7 @@ export function QuickStartSection({ onNavigateToCalculator }: QuickStartSectionP
                   {/* Age Input */}
                   <Box>
                     <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: "#30403A" }}>
-                      Current Age
+                      {ageMeta.label ?? "Current Age"}
                     </Typography>
                     <TextField
                       inputMode="numeric"
@@ -146,7 +288,7 @@ export function QuickStartSection({ onNavigateToCalculator }: QuickStartSectionP
                       }}
                       fullWidth
                       variant="outlined"
-                      placeholder="e.g., 35"
+                      placeholder={ageMeta.placeholder ?? "e.g., 35"}
                       inputProps={{ min: 18, max: 100 }}
                       sx={{
                         "& .MuiOutlinedInput-root": {
@@ -171,14 +313,14 @@ export function QuickStartSection({ onNavigateToCalculator }: QuickStartSectionP
                       }}
                     />
                     <Typography variant="caption" sx={{ display: "block", mt: 0.5, color: "rgba(48, 64, 58, 0.6)" }}>
-                      You have {Math.max(0, retirementAge - age)} years until retirement age
+                      {ageHelper}
                     </Typography>
                   </Box>
 
                   {/* Retirement Age Input */}
                   <Box>
                     <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: "#30403A" }}>
-                      Target Retirement Age
+                      {retirementMeta.label ?? "Target Retirement Age"}
                     </Typography>
                     <TextField
                       inputMode="numeric"
@@ -201,7 +343,7 @@ export function QuickStartSection({ onNavigateToCalculator }: QuickStartSectionP
                       }}
                       fullWidth
                       variant="outlined"
-                      placeholder="e.g., 65"
+                      placeholder={retirementMeta.placeholder ?? "e.g., 65"}
                       inputProps={{ min: 40, max: 100 }}
                       sx={{
                         "& .MuiOutlinedInput-root": {
@@ -226,14 +368,14 @@ export function QuickStartSection({ onNavigateToCalculator }: QuickStartSectionP
                       }}
                     />
                     <Typography variant="caption" sx={{ display: "block", mt: 0.5, color: "rgba(48, 64, 58, 0.6)" }}>
-                      When you want to retire
+                      {retirementHelper}
                     </Typography>
                   </Box>
 
                   {/* Balance Input */}
                   <Box>
                     <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: "#30403A" }}>
-                      Current 401(k) Balance
+                      {balanceMeta.label ?? "Current 401(k) Balance"}
                     </Typography>
                     <TextField
                       inputMode="numeric"
@@ -256,7 +398,7 @@ export function QuickStartSection({ onNavigateToCalculator }: QuickStartSectionP
                       }}
                       fullWidth
                       variant="outlined"
-                      placeholder="e.g., 100000"
+                      placeholder={balanceMeta.placeholder ?? "e.g., 100000"}
                       inputProps={{ min: 0, step: 1000 }}
                       sx={{
                         "& .MuiOutlinedInput-root": {
@@ -281,14 +423,14 @@ export function QuickStartSection({ onNavigateToCalculator }: QuickStartSectionP
                       }}
                     />
                     <Typography variant="caption" sx={{ display: "block", mt: 0.5, color: "rgba(48, 64, 58, 0.6)" }}>
-                      This is your starting amount. We'll add your contributions and growth from here.
+                      {balanceHelper}
                     </Typography>
                   </Box>
 
                   {/* Strategy Selection */}
                   <Box>
                     <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5, color: "#30403A" }}>
-                      Investment Strategy
+                      {strategyHeading}
                     </Typography>
                     <ToggleButtonGroup
                       value={strategy}
@@ -322,15 +464,37 @@ export function QuickStartSection({ onNavigateToCalculator }: QuickStartSectionP
                         },
                       }}
                     >
-                      <ToggleButton value="LOW_RISK">
-                        Conservative
-                      </ToggleButton>
-                      <ToggleButton value="MID_RISK">
-                        Balanced
-                      </ToggleButton>
-                      <ToggleButton value="HIGH_RISK">
-                        Aggressive
-                      </ToggleButton>
+                      {(Object.keys(DEFAULT_VALUES) as StrategyType[]).map((option) => {
+                        const optionConfig = getStrategyConfig(option);
+                        const optionReturn = optionReturns?.[option];
+                        const isSelected = strategy === option;
+                        return (
+                          <ToggleButton key={option} value={option}>
+                            <Stack spacing={0.25} alignItems="center">
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  fontWeight: 600,
+                                  color: isSelected ? optionConfig.color : "rgba(48,64,58,0.85)",
+                                }}
+                              >
+                                {optionConfig.label}
+                              </Typography>
+                              {optionReturn ? (
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    fontWeight: 500,
+                                    color: isSelected ? optionConfig.color : "rgba(48,64,58,0.6)",
+                                  }}
+                                >
+                                  {optionReturn}
+                                </Typography>
+                              ) : null}
+                            </Stack>
+                          </ToggleButton>
+                        );
+                      })}
                     </ToggleButtonGroup>
                     <Box sx={{ mt: 1.5, p: 1.5, backgroundColor: "rgba(0,0,0,0.02)", borderRadius: 2 }}>
                       <Typography variant="caption" sx={{ display: "block", color: "rgba(48, 64, 58, 0.7)", fontWeight: 500 }}>
@@ -386,12 +550,12 @@ export function QuickStartSection({ onNavigateToCalculator }: QuickStartSectionP
                                 letterSpacing: "0.1em",
                               }}
                             >
-                              {strategyConfig.label.toUpperCase()} STRATEGY
+                              {strategySuffixText
+                                ? `${strategyConfig.label.toUpperCase()} ${strategySuffixText.toUpperCase()}`
+                                : strategyConfig.label.toUpperCase()}
                             </Typography>
                             <Typography variant="h6" sx={{ fontWeight: 700, color: "#30403A", mt: 0.5 }}>
-                              {result.yearsToRetirement > 0
-                                ? `Retirement in ${result.yearsToRetirement} years`
-                                : "Already retired!"}
+                              {retirementHeadline}
                             </Typography>
                           </Box>
 
@@ -408,7 +572,7 @@ export function QuickStartSection({ onNavigateToCalculator }: QuickStartSectionP
                                 fontWeight: 600,
                               }}
                             >
-                              Portfolio at Age {result.retirementAge}
+                              {portfolioLabel}
                             </Typography>
                             <Typography
                               variant="h5"
@@ -428,9 +592,7 @@ export function QuickStartSection({ onNavigateToCalculator }: QuickStartSectionP
                                 mt: 0.5,
                               }}
                             >
-                              {result.balance === result.portfolioAtRetirement
-                                ? "Starting amount"
-                                : `+${formatCurrency(result.portfolioAtRetirement - result.balance)} from growth & contributions`}
+                              {portfolioGrowthText}
                             </Typography>
                           </Box>
 
@@ -445,7 +607,7 @@ export function QuickStartSection({ onNavigateToCalculator }: QuickStartSectionP
                                 fontWeight: 600,
                               }}
                             >
-                              Monthly Income (4% Rule)
+                              {monthlyIncomeLabel}
                             </Typography>
                             <Typography
                               variant="h6"
@@ -465,7 +627,7 @@ export function QuickStartSection({ onNavigateToCalculator }: QuickStartSectionP
                                   fontWeight: 400,
                                 }}
                               >
-                                /month
+                                {monthlyIncomeSuffix}
                               </Typography>
                             </Typography>
                           </Box>
@@ -481,7 +643,7 @@ export function QuickStartSection({ onNavigateToCalculator }: QuickStartSectionP
                                 fontWeight: 600,
                               }}
                             >
-                              Retirement Duration
+                              {retirementDurationLabel}
                             </Typography>
                             <Typography variant="h6" sx={{ fontWeight: 600, color: "#30403A" }}>
                               Until Age {result.retirementAge + result.retirementDuration}
@@ -494,7 +656,7 @@ export function QuickStartSection({ onNavigateToCalculator }: QuickStartSectionP
                                   fontWeight: 400,
                                 }}
                               >
-                                ({result.retirementDuration} years)
+                                {retirementDurationSuffix}
                               </Typography>
                             </Typography>
                           </Box>
@@ -518,7 +680,7 @@ export function QuickStartSection({ onNavigateToCalculator }: QuickStartSectionP
                                   fontWeight: 600,
                                 }}
                               >
-                                Retirement Readiness
+                                {retirementReadyLabel}
                               </Typography>
                               <Chip
                                 label={`${result.confidenceLevel} (${result.confidencePercentage}%)`}
@@ -563,11 +725,8 @@ export function QuickStartSection({ onNavigateToCalculator }: QuickStartSectionP
                                 fontStyle: "italic",
                               }}
                             >
-                              {result.confidenceLevel === "Comfortable"
-                                ? "On track for comfortable retirement"
-                                : result.confidenceLevel === "Borderline"
-                                ? "May need to adjust contributions or timeline"
-                                : "Review your strategy and goals"}
+                              {readinessMessages?.[result.confidenceLevel] ??
+                                defaultReadinessCopy[result.confidenceLevel]}
                             </Typography>
                           </Box>
                         </Stack>
@@ -611,7 +770,7 @@ export function QuickStartSection({ onNavigateToCalculator }: QuickStartSectionP
                   },
                 }}
               >
-                Get Detailed Analysis →
+                {ctaCopy}
               </Button>
             </motion.div>
 
@@ -625,9 +784,12 @@ export function QuickStartSection({ onNavigateToCalculator }: QuickStartSectionP
                   lineHeight: 1.6,
                 }}
               >
-                📊 These are estimates based on historical market averages.
-                <br />
-                Actual results will vary based on market conditions and personal circumstances.
+                {footnoteLines.map((line, index) => (
+                  <React.Fragment key={index}>
+                    {line}
+                    {index < footnoteLines.length - 1 ? <br /> : null}
+                  </React.Fragment>
+                ))}
               </Typography>
             </Box>
           </Stack>
@@ -636,3 +798,5 @@ export function QuickStartSection({ onNavigateToCalculator }: QuickStartSectionP
     </Box>
   );
 }
+
+export default QuickStartSection;

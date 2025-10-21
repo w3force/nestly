@@ -47,6 +47,8 @@ export * from './uiSchema/validation';
 export * from './uiSchema/categories';
 export * from './uiSchema/inputFields';
 export * from './uiSchema/screens';
+export * from './uiSchema/registry';
+export * from './uiSchema/utils';
 
 // Server-side only exports (commented out for client builds)
 // export * from './calculations/ssaMath';      // Use for server actions
@@ -54,5 +56,3 @@ export * from './uiSchema/screens';
 // export * from './calculations/compute';       // Use for server actions
 // export * from './calculations/whatif';        // Use for server actions
 // export * from './calculations/montecarlo';    // Use for server actions
-
-

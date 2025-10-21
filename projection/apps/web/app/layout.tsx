@@ -34,9 +34,15 @@ export default function RootLayout({
         <link rel="icon" href="/favicon-96x96.png" sizes="96x96" type="image/png" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
-      <body>
+      <body style={{ margin: 0 }}>
         <CssBaseline />
-        <GlobalStyles styles={{ body: { fontFamily: "'Inter', system-ui, sans-serif" } }} />
+        <GlobalStyles
+          styles={{
+            ':root': { fontFamily: "'Inter', system-ui, sans-serif" },
+            'html, body': { margin: 0, padding: 0 },
+            body: { margin: 0 },
+          }}
+        />
         <Providers>{children}</Providers>
       </body>
     </html>

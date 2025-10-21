@@ -30,9 +30,10 @@ export default function Home() {
     setIsGuestMode(router.query.mode === "guest");
   }, [router.query.mode]);
 
-  // Get feature items from schema
-  const featuresSection = LANDING_SCREEN.sections[1];
-  const heroSection = LANDING_SCREEN.sections[0];
+  // Get sections from schema
+  const heroSection = LANDING_SCREEN.sections.find((section) => section.id === "hero") ?? LANDING_SCREEN.sections[0];
+  const featuresSection =
+    LANDING_SCREEN.sections.find((section) => section.id === "features") ?? LANDING_SCREEN.sections[1];
   const heroMetadata = heroSection.metadata as any;
   const featureItems = (featuresSection.metadata?.items || []) as Array<{
     id: string;

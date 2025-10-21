@@ -1,11 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { ScrollView, View, StyleSheet } from "react-native";
-import Slider from '@react-native-community/slider';
 import {
   Button,
   Card,
   Text,
-  TextInput,
   useTheme,
   Snackbar,
 } from "react-native-paper";
@@ -19,9 +17,26 @@ import { SliderWithInfo } from "../components/SliderWithInfo";
 import { CompactInputField } from "../components/CompactInputField";
 import { SectionHeader } from "../components/SectionHeader";
 import { ResultsSummary } from "../components/ResultsSummary";
+import {
+  getFieldDefinition,
+  getScreenDefinition,
+  InputFieldDefinition,
+  ScreenDefinition,
+} from "@projection/shared";
 
 const chartAxisTextStyle = { fontSize: 10, fill: "rgba(48, 64, 58, 0.8)" };
 const deterministicStrokeStyle = { stroke: "#69B47A", strokeWidth: 2 };
+
+const deterministicScreen: ScreenDefinition = getScreenDefinition("deterministic");
+
+const HELP_TOPIC_MAP_MOBILE: Record<string, string> = {
+  age_help: "deterministic_age",
+  retirement_age_help: "deterministic_retirement_age",
+  current_balance_help: "deterministic_current_balance",
+  annual_contribution_help: "deterministic_annual_contribution",
+  expected_return_help: "deterministic_expected_return",
+  inflation_help: "deterministic_inflation",
+};
 
 const formatYAxisLabel = (value: number) => {
   if (value >= 1000000) {
@@ -74,6 +89,9 @@ const styles = StyleSheet.create({
   },
   sectionContainer: {
     marginBottom: 20,
+  },
+  fieldWrapper: {
+    marginBottom: 12,
   },
   resultText: {
     marginTop: 16,
@@ -225,6 +243,17 @@ const DeterministicTab: React.FC = () => {
   const [returnSliderWidth, setReturnSliderWidth] = useState(0);
   const [inflationSliderWidth, setInflationSliderWidth] = useState(0);
   const [showResults, setShowResults] = useState(false); // Only show results when Calculate is clicked
+  const fieldBindings = useMemo(
+    () => ({
+      age: { value: age, set: setAge },
+      retirementAge: { value: retireAge, set: setRetireAge },
+      currentBalance: { value: balance, set: setBalance },
+      contribution: { value: contribution, set: setContribution },
+      expectedReturn: { value: rate, set: setRate },
+      inflation: { value: inflation, set: setInflation },
+    }),
+    [age, retireAge, balance, contribution, rate, inflation],
+  );
 
   // Initialize from route parameters (from Quick Start defaults)
   useEffect(() => {
@@ -382,6 +411,194 @@ const DeterministicTab: React.FC = () => {
     updateInflationMilestone(inflation);
   }, [inflation, updateInflationMilestone]);
 
+  const renderField = useCallback(
+    (field: InputFieldDefinition) => {
+      const binding = fieldBindings[field.id];
+      if (!binding) {
+        return null;
+      }
+
+      const helpTopicId = field.helpTopicId ? HELP_TOPIC_MAP_MOBILE[field.helpTopicId] : undefined;
+      const helpIcon = helpTopicId ? <HelpIcon topicId={helpTopicId} /> : undefined;
+
+      if (field.type === "slider") {
+        if (field.id === "contribution") {
+          const standardLimit = 23500;
+          const catchUpLimit = 30500;
+          const dynamicMax = age >= 50 ? catchUpLimit : standardLimit;
+          const status =
+            contribution <= standardLimit
+              ? {
+                  badge: "2025 Limit",
+                  color: "#69B47A",
+                  infoTitle: "✓ Within 2025 Limit",
+                  infoDescription: "You can contribute up to $23,500 in 2025 (standard limit).",
+                  background: "rgba(105, 180, 122, 0.1)",
+                }
+              : age >= 50 && contribution <= catchUpLimit
+              ? {
+                  badge: "Catch-up (50+)",
+                  color: "#FFB74D",
+                  infoTitle: "✓ Catch-up Eligible",
+                  infoDescription: "You're 50+, so you can contribute up to $30,500 ($23.5k + $7k catch-up).",
+                  background: "rgba(255, 183, 77, 0.1)",
+                }
+              : {
+                  badge: "Over Limit",
+                  color: "#FF6B6B",
+                  infoTitle: "⚠ Over Contribution Limit",
+                  infoDescription: "Your contribution exceeds the IRS limit. Consider reducing it.",
+                  background: "rgba(255, 107, 107, 0.1)",
+                };
+
+          return (
+            <SliderWithInfo
+              key={field.id}
+              title={`${field.label}:`}
+              value={binding.value}
+              min={field.constraints.min}
+              max={dynamicMax}
+              step={field.constraints.step}
+              suffix=" ($)"
+              onValueChange={binding.set}
+              trackColor={status.color}
+              badge={{
+                label: status.badge,
+                color: status.color,
+              }}
+              rangeIndicators={[
+                { label: "$0", value: 0 },
+                { label: "$23.5k (2025)", value: standardLimit },
+                ...(age >= 50 ? [{ label: "$30.5k (50+)", value: catchUpLimit }] : []),
+              ]}
+              infoBox={{
+                title: status.infoTitle,
+                description: status.infoDescription,
+                backgroundColor: status.background,
+              }}
+            />
+          );
+        }
+
+        if (field.id === "expectedReturn") {
+          return (
+            <SliderWithInfo
+              key={field.id}
+              title={`${field.label}:`}
+              value={binding.value}
+              min={field.constraints.min}
+              max={field.constraints.max}
+              step={field.constraints.step}
+              suffix="%"
+              onValueChange={handleRateChange}
+              trackColor={rate < 5 ? "#FF6B6B" : rate <= 8 ? "#FFB74D" : "#69B47A"}
+              badge={{
+                label: rate < 5 ? "Conservative" : rate <= 8 ? "Balanced" : "Aggressive",
+                color: rate < 5 ? "#FF6B6B" : rate <= 8 ? "#FFB74D" : "#69B47A",
+              }}
+              rangeIndicators={[
+                { label: "0%", value: 0 },
+                { label: "5% (Low)", value: 5 },
+                { label: "8% (Avg)", value: 8 },
+                { label: "15%", value: 15 },
+              ]}
+              milestones={returnMilestones}
+              infoBox={{
+                title:
+                  rate < 5
+                    ? "🛡️ Conservative Strategy"
+                    : rate <= 8
+                    ? "⚖️ Balanced Approach"
+                    : "📈 Aggressive Growth",
+                description:
+                  rate < 5
+                    ? "Lower expected returns; suitable for risk-averse investors or near retirement."
+                    : rate <= 8
+                    ? "Moderate returns reflecting historical market averages; suitable for most investors."
+                    : "Higher expected returns; assumes strong equity performance and higher risk tolerance.",
+                backgroundColor:
+                  rate < 5
+                    ? "rgba(255, 107, 107, 0.1)"
+                    : rate <= 8
+                    ? "rgba(255, 183, 77, 0.1)"
+                    : "rgba(105, 180, 122, 0.1)",
+              }}
+            />
+          );
+        }
+
+        if (field.id === "inflation") {
+          return (
+            <SliderWithInfo
+              key={field.id}
+              title={`${field.label}:`}
+              value={binding.value}
+              min={field.constraints.min}
+              max={field.constraints.max}
+              step={field.constraints.step}
+              suffix="%"
+              onValueChange={handleInflationChange}
+              trackColor={inflation < 2 ? "#69B47A" : inflation <= 4 ? "#FFB74D" : "#FF6B6B"}
+              badge={{
+                label: inflation < 2 ? "Low" : inflation <= 4 ? "Moderate" : "High",
+                color: inflation < 2 ? "#69B47A" : inflation <= 4 ? "#FFB74D" : "#FF6B6B",
+              }}
+              rangeIndicators={[
+                { label: "0%", value: 0 },
+                { label: "2% (Target)", value: 2 },
+                { label: "4% (Moderate)", value: 4 },
+                { label: "6%", value: 6 },
+              ]}
+              milestones={inflationMilestones}
+              infoBox={{
+                title:
+                  inflation < 2
+                    ? "✓ Low Inflation"
+                    : inflation <= 4
+                    ? "⚠ Moderate Inflation"
+                    : "🔴 High Inflation",
+                description:
+                  inflation < 2
+                    ? "Strong purchasing power preservation; your $1 today buys nearly as much in the future."
+                    : inflation <= 4
+                    ? "Normal inflation range; your purchasing power will gradually decline."
+                    : "High inflation environment; plan for significantly higher expenses in the future.",
+                backgroundColor:
+                  inflation < 2
+                    ? "rgba(105, 180, 122, 0.1)"
+                    : inflation <= 4
+                    ? "rgba(255, 183, 77, 0.1)"
+                    : "rgba(255, 107, 107, 0.1)",
+              }}
+            />
+          );
+        }
+      }
+
+      return (
+        <CompactInputField
+          key={field.id}
+          label={field.label}
+          value={String(binding.value)}
+          onChangeText={(value) => binding.set(Number(value || 0))}
+          keyboardType="numeric"
+          helpIcon={helpIcon}
+        />
+      );
+    },
+    [
+      fieldBindings,
+      age,
+      contribution,
+      rate,
+      inflation,
+      handleRateChange,
+      handleInflationChange,
+      returnMilestones,
+      inflationMilestones,
+    ],
+  );
+
   // Auto-recalculate when parameters change (only if result already exists)
   const lastSubmittedRef = useRef<{
     age: number;
@@ -461,172 +678,26 @@ const DeterministicTab: React.FC = () => {
           subtitle="Deterministic projection"
         />
         <Card.Content>
-          {/* Personal Information Section */}
-          <View style={styles.sectionContainer}>
-            <SectionHeader 
-              title="Personal Information" 
-              subtitle="Your age and retirement timeline"
-            />
-            
-            <CompactInputField
-              label="Current Age"
-              value={age.toString()}
-              onChangeText={value => setAge(Number(value || 0))}
-              keyboardType="numeric"
-              helpIcon={<HelpIcon topicId="deterministic_age" />}
-            />
-            
-            <CompactInputField
-              label="Retirement Age"
-              value={retireAge.toString()}
-              onChangeText={value => setRetireAge(Number(value || 0))}
-              keyboardType="numeric"
-              helpIcon={<HelpIcon topicId="deterministic_retirement_age" />}
-            />
-          </View>
-
-          {/* Savings Section */}
-          <View style={styles.sectionContainer}>
-            <SectionHeader 
-              title="Current Savings" 
-              subtitle="Your starting balance"
-            />
-            
-            <CompactInputField
-              label="Current Balance"
-              value={balance.toString()}
-              onChangeText={value => setBalance(Number(value || 0))}
-              keyboardType="numeric"
-              helpIcon={<HelpIcon topicId="deterministic_current_balance" />}
-            />
-          </View>
-
-          {/* Contribution Slider with info */}
-          <View style={styles.sectionContainer}>
-            <SectionHeader 
-              title="Annual Contributions" 
-              subtitle="How much you contribute yearly"
-            />
-            
-            <SliderWithInfo
-              title="Annual Contribution:"
-              value={contribution}
-              min={0}
-              max={age >= 50 ? 30500 : 23500}
-              step={500}
-              suffix=" ($)"
-              onValueChange={setContribution}
-              trackColor="#69B47A"
-              badge={{
-                label: contribution <= 23500 ? '2025 Limit' : age >= 50 && contribution <= 30500 ? 'Catch-up (50+)' : 'Over Limit',
-                color: contribution <= 23500 ? '#69B47A' : age >= 50 && contribution <= 30500 ? '#FFB74D' : '#FF6B6B',
-              }}
-              rangeIndicators={[
-                { label: '$0', value: 0 },
-                { label: '$23.5k (2025)', value: 23500 },
-                ...(age >= 50 ? [{ label: '$30.5k (50+)', value: 30500 }] : []),
-              ]}
-              infoBox={{
-                title: contribution <= 23500 ? '✓ Within 2025 Limit' : age >= 50 && contribution <= 30500 ? '✓ Catch-up Eligible' : '⚠ Over Contribution Limit',
-                description: contribution <= 23500 
-                  ? 'You can contribute up to $23,500 in 2025 (standard limit).'
-                  : age >= 50 && contribution <= 30500
-                  ? `You're 50+, so you can contribute up to $30,500 ($23.5k + $7k catch-up).`
-                  : 'Your contribution exceeds the IRS limit. Consider reducing it.',
-                backgroundColor: contribution <= 23500 
-                  ? 'rgba(105, 180, 122, 0.1)' 
-                  : age >= 50 && contribution <= 30500
-                  ? 'rgba(255, 183, 77, 0.1)'
-                  : 'rgba(255, 107, 107, 0.1)',
-              }}
-            />
-          </View>
-
-          {/* Return Rate Slider with info */}
-          <View style={styles.sectionContainer}>
-            <SectionHeader 
-              title="Investment Returns" 
-              subtitle="Expected annual return rate"
-            />
-            
-            <SliderWithInfo
-              title="Expected Return:"
-              value={rate}
-              min={0}
-              max={15}
-              step={0.5}
-              suffix="%"
-              onValueChange={handleRateChange}
-              trackColor={rate < 5 ? '#FF6B6B' : rate <= 8 ? '#FFB74D' : '#69B47A'}
-              badge={{
-                label: rate < 5 ? 'Conservative' : rate <= 8 ? 'Balanced' : 'Aggressive',
-                color: rate < 5 ? '#FF6B6B' : rate <= 8 ? '#FFB74D' : '#69B47A',
-              }}
-              rangeIndicators={[
-                { label: '0%', value: 0 },
-                { label: '5% (Low)', value: 5 },
-                { label: '8% (Avg)', value: 8 },
-                { label: '15%', value: 15 },
-              ]}
-              milestones={returnMilestones}
-              infoBox={{
-                title: rate < 5 ? '🛡️ Conservative Strategy' : rate <= 8 ? '⚖️ Balanced Approach' : '📈 Aggressive Growth',
-                description: rate < 5 
-                  ? 'Lower expected returns; suitable for risk-averse investors or near retirement.'
-                  : rate <= 8
-                  ? 'Moderate returns reflecting historical market averages; suitable for most investors.'
-                  : 'Higher expected returns; assumes strong equity performance and higher risk tolerance.',
-                backgroundColor: rate < 5 
-                  ? 'rgba(255, 107, 107, 0.1)' 
-                  : rate <= 8
-                  ? 'rgba(255, 183, 77, 0.1)'
-                  : 'rgba(105, 180, 122, 0.1)',
-              }}
-            />
-          </View>
-
-          {/* Inflation Slider with info */}
-          <View style={styles.sectionContainer}>
-            <SectionHeader 
-              title="Inflation Rate" 
-              subtitle="Expected annual inflation"
-            />
-            
-            <SliderWithInfo
-              title="Inflation Rate:"
-              value={inflation}
-              min={0}
-              max={6}
-              step={0.1}
-              suffix="%"
-              onValueChange={handleInflationChange}
-              trackColor={inflation < 2 ? '#69B47A' : inflation <= 4 ? '#FFB74D' : '#FF6B6B'}
-              badge={{
-                label: inflation < 2 ? 'Low' : inflation <= 4 ? 'Moderate' : 'High',
-                color: inflation < 2 ? '#69B47A' : inflation <= 4 ? '#FFB74D' : '#FF6B6B',
-              }}
-              rangeIndicators={[
-                { label: '0%', value: 0 },
-                { label: '2% (Target)', value: 2 },
-                { label: '4% (Moderate)', value: 4 },
-                { label: '6%', value: 6 },
-              ]}
-              milestones={inflationMilestones}
-              infoBox={{
-                title: inflation < 2 ? '✓ Low Inflation' : inflation <= 4 ? '⚠ Moderate Inflation' : '🔴 High Inflation',
-                description: inflation < 2 
-                  ? 'Strong purchasing power preservation; your $1 today buys nearly as much in the future.'
-                  : inflation <= 4
-                  ? 'Normal inflation range; your purchasing power will gradually decline.'
-                  : 'High inflation environment; plan for significantly higher expenses in the future.',
-                backgroundColor: inflation < 2 
-                  ? 'rgba(105, 180, 122, 0.1)' 
-                  : inflation <= 4
-                  ? 'rgba(255, 183, 77, 0.1)'
-                  : 'rgba(255, 107, 107, 0.1)',
-              }}
-            />
-          </View>
+          {deterministicScreen.sections.map((section) => (
+            <View key={section.id} style={styles.sectionContainer}>
+              <SectionHeader
+                title={section.title}
+                subtitle={section.description ?? ""}
+              />
+              {section.fields.map((fieldId) => {
+                const fieldDefinition = getFieldDefinition(fieldId);
+                const element = renderField(fieldDefinition);
+                if (!element) {
+                  return null;
+                }
+                return (
+                  <View key={`${section.id}-${fieldDefinition.id}`} style={styles.fieldWrapper}>
+                    {element}
+                  </View>
+                );
+              })}
+            </View>
+          ))}
 
           {/* Buttons */}
           <Button

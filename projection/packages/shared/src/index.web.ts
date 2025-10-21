@@ -1,12 +1,7 @@
 /**
- * Type-only exports from @projection/shared
- * 
- * Safe to import in browser/web apps
- * Does not include computation logic
+ * Web entry point for @projection/shared
+ *
+ * Re-export shared logic for browser environments.
  */
 
-// Types only
-export type * from './types/retirement';
-export type * from './types/whatif';
-export type * from './types/montecarlo';
-export type * from './types/tiers';
+export * from './index';
