@@ -1,9 +1,9 @@
 /**
  * InflationSlider Component (Web)
- * Specialized slider for Inflation with inline milestone and quick-pick markers
+ * Schema-driven slider for Inflation with inline milestone and quick-pick markers
  */
 
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Slider,
@@ -11,24 +11,17 @@ import {
   Chip,
   Tooltip,
 } from '@mui/material';
-import { InputFieldDefinition } from '@projection/shared';
+import {
+  getSliderMetadata,
+  InputFieldDefinition,
+  resolveSliderMilestones,
+  resolveSliderRangeIndicators,
+  resolveSliderState,
+  resolveSliderSuggestions,
+} from '@projection/shared';
 import { HelpTooltip } from './HelpTooltip';
 
-const INFLATION_SUGGESTIONS = [
-  { label: '5-yr avg', value: 3.6 },
-  { label: '10-yr avg', value: 2.6 },
-  { label: '15-yr avg', value: 2.2 },
-];
-
-const INFLATION_MILESTONES = [
-  { value: 0, label: '0%' },
-  { value: 2, label: '2% (Good)' },
-  { value: 4, label: '4% (Normal)' },
-  { value: 6, label: '6%' },
-];
-
 const MARKER_SIZE = 16;
-const SUGGESTION_SNAP_THRESHOLD = 0.2;
 const MILESTONE_LABEL_OFFSET = 8;
 
 interface InflationSliderProps {
@@ -61,35 +54,59 @@ export const InflationSlider: React.FC<InflationSliderProps> = ({
   const sliderRef = useRef<HTMLSpanElement | null>(null);
   const [trackMetrics, setTrackMetrics] = useState<TrackMetrics | null>(null);
 
-  const getInflationInfo = () => {
-    if (value < 2) {
-      return {
-        status: 'Low Inflation',
-        color: '#69B47A',
-        backgroundColor: 'rgba(105, 180, 122, 0.15)',
-        description: 'Below historical average. Strong purchasing power growth.',
-      };
-    }
-    if (value <= 4) {
-      return {
-        status: 'Moderate Inflation',
-        color: '#FFB74D',
-        backgroundColor: 'rgba(255, 183, 77, 0.15)',
-        description: 'Within normal range. Plan accordingly for purchasing power erosion.',
-      };
-    }
-    return {
-      status: 'High Inflation',
-      color: '#FF6B6B',
-      backgroundColor: 'rgba(255, 107, 107, 0.15)',
-      description: 'Above historical average. Significant purchasing power reduction.',
-    };
-  };
+  const sliderMetadata = useMemo(() => getSliderMetadata(field), [field]);
+  const sliderState = resolveSliderState(sliderMetadata, {
+    value,
+    formState: {},
+  });
+  const rangeIndicators = useMemo(
+    () => resolveSliderRangeIndicators(sliderMetadata, { formState: {} }),
+    [sliderMetadata],
+  );
+  const milestones = useMemo(
+    () => resolveSliderMilestones(sliderMetadata),
+    [sliderMetadata],
+  );
+  const suggestions = useMemo(
+    () => resolveSliderSuggestions(sliderMetadata),
+    [sliderMetadata],
+  );
 
-  const inflationInfo = getInflationInfo();
+  const trackColor =
+    sliderState?.trackColor ?? sliderState?.badgeColor ?? '#69B47A';
+  const badgeLabel = sliderState?.label ?? 'Status';
+  const badgeColor = sliderState?.badgeColor ?? '#69B47A';
+  const badgeTextColor = sliderState?.textColor ?? '#FFFFFF';
+  const infoBackground =
+    sliderState?.backgroundColor ?? 'rgba(105, 180, 122, 0.12)';
+  const infoTitle = sliderState?.info?.title;
+  const infoDescription = sliderState?.info?.description;
 
   const minValue = field.constraints.min;
   const maxValue = field.constraints.max;
+
+  const suggestionThreshold = useMemo(
+    () => Math.max((field.constraints.step ?? 0.1) * 1.2, 0.2),
+    [field.constraints.step],
+  );
+
+  const activeMilestone = useMemo(() => {
+    if (!milestones.length) return null;
+    const milestoneThreshold = Math.max(
+      (field.constraints.step ?? 0.1) * 1.5,
+      0.2,
+    );
+    return (
+      milestones.find(
+        (milestone) => Math.abs(milestone.value - value) <= milestoneThreshold,
+      ) ?? null
+    );
+  }, [milestones, value, field.constraints.step]);
+
+  const formatValue =
+    typeof field.constraints.format === 'function'
+      ? field.constraints.format
+      : (v: number) => `${v.toFixed(1)}%`;
 
   const getPercent = (val: number) => {
     const range = maxValue - minValue;
@@ -100,7 +117,7 @@ export const InflationSlider: React.FC<InflationSliderProps> = ({
   };
 
   const isSuggestionActive = (suggestionValue: number) =>
-    Math.abs(value - suggestionValue) < SUGGESTION_SNAP_THRESHOLD;
+    Math.abs(value - suggestionValue) < suggestionThreshold;
 
   useLayoutEffect(() => {
     if (typeof window === 'undefined') {
@@ -157,7 +174,7 @@ export const InflationSlider: React.FC<InflationSliderProps> = ({
               fontSize: '0.95rem',
             }}
           >
-            Inflation Rate: {value.toFixed(1)}%
+            Inflation Rate: {formatValue(value)}
           </Typography>
           {help && (
             <HelpTooltip
@@ -168,11 +185,11 @@ export const InflationSlider: React.FC<InflationSliderProps> = ({
             />
           )}
           <Chip
-            label={inflationInfo.status}
+            label={badgeLabel}
             size="small"
             sx={{
-              backgroundColor: inflationInfo.color,
-              color: '#fff',
+              backgroundColor: badgeColor,
+              color: badgeTextColor,
               fontWeight: 600,
               fontSize: '0.75rem',
               height: 24,
@@ -192,7 +209,7 @@ export const InflationSlider: React.FC<InflationSliderProps> = ({
           sx={{
             height: platformDefaults?.heightPixels ? `${platformDefaults.heightPixels}px` : '48px',
             '& .MuiSlider-track': {
-              backgroundColor: inflationInfo.color,
+              backgroundColor: trackColor,
               height: platformDefaults?.trackHeight ? `${platformDefaults.trackHeight}px` : '8px',
             },
             '& .MuiSlider-rail': {
@@ -202,7 +219,7 @@ export const InflationSlider: React.FC<InflationSliderProps> = ({
             '& .MuiSlider-thumb': {
               width: platformDefaults?.thumbSize ? `${platformDefaults.thumbSize}px` : '24px',
               height: platformDefaults?.thumbSize ? `${platformDefaults.thumbSize}px` : '24px',
-              backgroundColor: inflationInfo.color,
+              backgroundColor: trackColor,
               border: '2px solid #FFFFFF',
               boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
               '&:hover': {
@@ -212,11 +229,15 @@ export const InflationSlider: React.FC<InflationSliderProps> = ({
           }}
         />
 
-        {INFLATION_SUGGESTIONS.map((suggestion) => {
+        {suggestions.map((suggestion) => {
           const percent = getPercent(suggestion.value);
           const active = isSuggestionActive(suggestion.value);
           return (
-            <Tooltip key={suggestion.label} title={`${suggestion.label}: ${suggestion.value.toFixed(1)}%`} arrow>
+            <Tooltip
+              key={suggestion.label}
+              title={`${suggestion.label}: ${formatValue(suggestion.value)}`}
+              arrow
+            >
               <Box
                 onClick={() => handleSuggestionSelect(suggestion.value)}
                 onKeyDown={(event) => {
@@ -246,7 +267,7 @@ export const InflationSlider: React.FC<InflationSliderProps> = ({
                 }}
                 role="button"
                 tabIndex={0}
-                aria-label={`${suggestion.label} ${suggestion.value.toFixed(1)} percent`}
+                aria-label={`${suggestion.label} ${formatValue(suggestion.value)}`}
               />
             </Tooltip>
           );
@@ -263,11 +284,11 @@ export const InflationSlider: React.FC<InflationSliderProps> = ({
               height: trackMetrics.offsetTop + trackMetrics.height,
             }}
           >
-            {INFLATION_MILESTONES.map((milestone) => {
-              const percent = getPercent(milestone.value);
+            {rangeIndicators.map((indicator) => {
+              const percent = getPercent(indicator.value);
               return (
                 <Box
-                  key={`inflation-milestone-${milestone.value}`}
+                  key={`inflation-indicator-${indicator.label}-${indicator.value}`}
                   sx={{
                     position: 'absolute',
                     left: `calc(${percent}% )`,
@@ -291,7 +312,7 @@ export const InflationSlider: React.FC<InflationSliderProps> = ({
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    {milestone.label}
+                    {indicator.label}
                   </Box>
                   <Box
                     sx={{
@@ -310,8 +331,54 @@ export const InflationSlider: React.FC<InflationSliderProps> = ({
         )}
       </Box>
 
-      {/* Info bar removed for cleaner layout */}
+      {(infoTitle || infoDescription || activeMilestone) && (
+        <Box
+          sx={{
+            mt: 1,
+            px: 1.5,
+            py: 1.25,
+            borderRadius: 1,
+            backgroundColor: infoBackground,
+            borderLeft: `4px solid ${trackColor}`,
+          }}
+        >
+          {infoTitle && (
+            <Typography
+              sx={{
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                color: '#30403A',
+                mb: infoDescription || activeMilestone ? 0.5 : 0,
+              }}
+            >
+              {infoTitle}
+            </Typography>
+          )}
+          {infoDescription && (
+            <Typography
+              sx={{
+                fontSize: '0.8rem',
+                color: 'rgba(48, 64, 58, 0.78)',
+                lineHeight: 1.45,
+                mb: activeMilestone ? 0.75 : 0,
+              }}
+            >
+              {infoDescription}
+            </Typography>
+          )}
+          {activeMilestone && (
+            <Typography
+              sx={{
+                fontSize: '0.78rem',
+                color: 'rgba(48, 64, 58, 0.85)',
+                fontWeight: 500,
+              }}
+            >
+              {activeMilestone.label}: {activeMilestone.description}
+            </Typography>
+          )}
+        </Box>
+      )}
     </Box>
   );
 };
-

@@ -41,18 +41,24 @@ export {
 // Content
 export * from './content/helpContent';
 
+// Theme - Design tokens and constants
+export * from './theme';
+
 // UI Schema Layer - Unified UI Definitions
 export * from './uiSchema/types';
 export * from './uiSchema/validation';
 export * from './uiSchema/categories';
 export * from './uiSchema/inputFields';
 export * from './uiSchema/screens';
+export * from './uiSchema/navigation';
 export * from './uiSchema/registry';
 export * from './uiSchema/utils';
+
+// What-if calculations - safe for browser/mobile (lightweight calculations)
+export * from './calculations/whatif';
 
 // Server-side only exports (commented out for client builds)
 // export * from './calculations/ssaMath';      // Use for server actions
 // export * from './calculations/medicareMath';  // Use for server actions
 // export * from './calculations/compute';       // Use for server actions
-// export * from './calculations/whatif';        // Use for server actions
 // export * from './calculations/montecarlo';    // Use for server actions

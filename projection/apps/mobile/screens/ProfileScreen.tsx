@@ -212,7 +212,7 @@ export default function ProfileScreen() {
                             {scenario.name}
                           </Text>
                           <Text variant="bodySmall" style={{ opacity: 0.6 }}>
-                            Contribution: ${scenario.contribution?.toLocaleString() || 0}
+                            Savings Rate: {scenario.savingsRate ?? scenario.contribution ?? 0}%
                           </Text>
                           <Text variant="bodySmall" style={{ opacity: 0.6 }}>
                             Return: {scenario.return}%

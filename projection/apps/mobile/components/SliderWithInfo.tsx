@@ -9,7 +9,7 @@
 import React, { useMemo, useEffect, useRef } from 'react';
 import { View, StyleSheet, useWindowDimensions, Animated } from 'react-native';
 import Slider from '@react-native-community/slider';
-import { Text, useTheme } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 
 interface SliderWithInfoProps {
   title: string;
@@ -19,6 +19,7 @@ interface SliderWithInfoProps {
   step: number;
   suffix: string;
   onValueChange: (value: number) => void;
+  valueFormatter?: (value: number) => string;
   badge?: {
     label: string;
     color: string;
@@ -40,6 +41,7 @@ interface SliderWithInfoProps {
     label: string;
     description: string;
   }>;
+  milestoneThreshold?: number;
 }
 
 const styles = StyleSheet.create({
@@ -201,8 +203,9 @@ export const SliderWithInfo: React.FC<SliderWithInfoProps> = ({
   activeMarkerLabel,
   activeMarkerDescription,
   milestones = [],
+  milestoneThreshold,
+  valueFormatter,
 }) => {
-  const theme = useTheme();
   const { width } = useWindowDimensions();
   
   // Animated value for fade transition between static and milestone info
@@ -211,9 +214,9 @@ export const SliderWithInfo: React.FC<SliderWithInfoProps> = ({
   // Find closest milestone to current value for smooth inline display
   const closestMilestone = useMemo(() => {
     if (milestones.length === 0) return null;
-    const proximity = 0.5; // How close value needs to be to show milestone
+    const proximity = milestoneThreshold ?? Math.max(step * 0.75, 0.5);
     return milestones.find((m) => Math.abs(m.value - value) <= proximity) || null;
-  }, [value, milestones]);
+  }, [milestones, milestoneThreshold, step, value]);
 
   // Animate fade when milestone changes
   useEffect(() => {
@@ -230,7 +233,10 @@ export const SliderWithInfo: React.FC<SliderWithInfoProps> = ({
       <View style={styles.header}>
         <View style={styles.titleSection}>
           <Text style={styles.titleText}>
-            {title} {value.toFixed(value > 100 ? 0 : 1)}{suffix}
+            {title}{' '}
+            {valueFormatter
+              ? valueFormatter(value)
+              : `${value.toFixed(value > 100 ? 0 : 1)}${suffix}`}
           </Text>
           {badge && (
             <View style={[styles.badge, { backgroundColor: badge.color }]}>

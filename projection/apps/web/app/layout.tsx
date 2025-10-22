@@ -17,6 +17,7 @@ export const metadata: Metadata = {
 
 import { CssBaseline, GlobalStyles } from "@mui/material";
 import { Providers } from "./providers";
+import NavBar from "../components/NavBar";
 
 export default function RootLayout({
   children,
@@ -43,7 +44,10 @@ export default function RootLayout({
             body: { margin: 0 },
           }}
         />
-        <Providers>{children}</Providers>
+        <Providers>
+          <NavBar />
+          {children}
+        </Providers>
       </body>
     </html>
   )

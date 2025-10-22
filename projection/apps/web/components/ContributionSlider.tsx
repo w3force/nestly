@@ -3,14 +3,19 @@
  * Specialized slider for Annual Contribution with inline IRS limit markers
  */
 
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Slider,
   Typography,
   Chip,
 } from '@mui/material';
-import { InputFieldDefinition } from '@projection/shared';
+import {
+  getSliderMetadata,
+  InputFieldDefinition,
+  resolveSliderRangeIndicators,
+  resolveSliderState,
+} from '@projection/shared';
 import { HelpTooltip } from './HelpTooltip';
 
 const MARKER_SIZE = 16;
@@ -48,49 +53,48 @@ export const ContributionSlider: React.FC<ContributionSliderProps> = ({
   const sliderRef = useRef<HTMLSpanElement | null>(null);
   const [trackMetrics, setTrackMetrics] = useState<TrackMetrics | null>(null);
 
-  const limit2025 = 23500;
-  const limitCatchUp = 30500;
-  const dynamicMax = age >= 50 ? limitCatchUp : limit2025;
-
-  const milestones = [
-    { value: 0, label: '$0' },
-    { value: limit2025, label: `$${(limit2025 / 1000).toFixed(1)}k (2025)` },
-    ...(age >= 50
-      ? [{ value: limitCatchUp, label: `$${(limitCatchUp / 1000).toFixed(1)}k (50+)` }]
-      : []),
-  ];
-
-  const getStatusInfo = () => {
-    if (value <= limit2025) {
-      return {
-        status: '2025 Limit',
-        color: '#69B47A',
-        backgroundColor: 'rgba(105, 180, 122, 0.15)',
-      };
+  const formState = useMemo(() => ({ age }), [age]);
+  const sliderMetadata = useMemo(() => getSliderMetadata(field), [field]);
+  const dynamicMax = useMemo(() => {
+    if (typeof field.constraints.conditionalMax === 'function') {
+      const conditional = field.constraints.conditionalMax(formState);
+      if (typeof conditional === 'number') {
+        return conditional;
+      }
     }
-    if (age >= 50 && value <= limitCatchUp) {
-      return {
-        status: 'Catch-up (50+)',
-        color: '#FFB74D',
-        backgroundColor: 'rgba(255, 183, 77, 0.15)',
-      };
-    }
-    return {
-      status: 'Over Limit',
-      color: '#FF6B6B',
-      backgroundColor: 'rgba(255, 107, 107, 0.15)',
-    };
-  };
+    return field.constraints.max;
+  }, [field, formState]);
+  const safeMax = dynamicMax ?? field.constraints.max;
 
-  const statusInfo = getStatusInfo();
+  const sliderState = resolveSliderState(sliderMetadata, {
+    value,
+    formState,
+    dynamicMax: safeMax,
+  });
+  const rangeIndicators = useMemo(
+    () => resolveSliderRangeIndicators(sliderMetadata, { formState }),
+    [sliderMetadata, formState],
+  );
 
-  const formatCurrency = (amount: number) => `$${(amount / 1000).toFixed(1)}k`;
+  const trackColor =
+    sliderState?.trackColor ?? sliderState?.badgeColor ?? '#69B47A';
+  const badgeLabel = sliderState?.label ?? 'Status';
+  const badgeColor = sliderState?.badgeColor ?? '#69B47A';
+  const badgeTextColor = sliderState?.textColor ?? '#FFFFFF';
+  const infoBackground =
+    sliderState?.backgroundColor ?? 'rgba(105, 180, 122, 0.12)';
+
+  const infoTitle = sliderState?.info?.title;
+  const infoDescription = sliderState?.info?.description;
+
+  const formatCurrency = (amount: number) =>
+    `$${amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 
   const getPercent = (amount: number) => {
-    if (dynamicMax <= 0) {
+    if (safeMax <= 0) {
       return 0;
     }
-    return (amount / dynamicMax) * 100;
+    return (amount / safeMax) * 100;
   };
 
   useLayoutEffect(() => {
@@ -153,11 +157,11 @@ export const ContributionSlider: React.FC<ContributionSliderProps> = ({
             />
           )}
           <Chip
-            label={statusInfo.status}
+            label={badgeLabel}
             size="small"
             sx={{
-              backgroundColor: statusInfo.color,
-              color: '#fff',
+              backgroundColor: badgeColor,
+              color: badgeTextColor,
               fontWeight: 600,
               fontSize: '0.75rem',
               height: 24,
@@ -172,12 +176,12 @@ export const ContributionSlider: React.FC<ContributionSliderProps> = ({
           value={value}
           onChange={(_, newValue) => onChange(newValue as number)}
           min={0}
-          max={dynamicMax}
+          max={safeMax}
           step={500}
           sx={{
             height: platformDefaults?.heightPixels ? `${platformDefaults.heightPixels}px` : '48px',
             '& .MuiSlider-track': {
-              backgroundColor: statusInfo.color,
+              backgroundColor: trackColor,
               height: platformDefaults?.trackHeight ? `${platformDefaults.trackHeight}px` : '8px',
             },
             '& .MuiSlider-rail': {
@@ -187,7 +191,7 @@ export const ContributionSlider: React.FC<ContributionSliderProps> = ({
             '& .MuiSlider-thumb': {
               width: platformDefaults?.thumbSize ? `${platformDefaults.thumbSize}px` : '24px',
               height: platformDefaults?.thumbSize ? `${platformDefaults.thumbSize}px` : '24px',
-              backgroundColor: statusInfo.color,
+              backgroundColor: trackColor,
               border: '2px solid #FFFFFF',
               boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
               '&:hover': {
@@ -208,11 +212,11 @@ export const ContributionSlider: React.FC<ContributionSliderProps> = ({
               height: trackMetrics.offsetTop + trackMetrics.height,
             }}
           >
-            {milestones.map((milestone) => {
-              const percent = getPercent(milestone.value);
+            {rangeIndicators.map((indicator) => {
+              const percent = getPercent(indicator.value);
               return (
                 <Box
-                  key={`contribution-milestone-${milestone.value}`}
+                  key={`contribution-indicator-${indicator.label}-${indicator.value}`}
                   sx={{
                     position: 'absolute',
                     left: `calc(${percent}% )`,
@@ -236,7 +240,7 @@ export const ContributionSlider: React.FC<ContributionSliderProps> = ({
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    {milestone.label}
+                    {indicator.label}
                   </Box>
                   <Box
                     sx={{
@@ -255,7 +259,42 @@ export const ContributionSlider: React.FC<ContributionSliderProps> = ({
         )}
       </Box>
 
-      {/* Info bar removed for cleaner layout */}
+      {(infoTitle || infoDescription) && (
+        <Box
+          sx={{
+            mt: 1,
+            px: 1.5,
+            py: 1.25,
+            borderRadius: 1,
+            backgroundColor: infoBackground,
+            borderLeft: `4px solid ${trackColor}`,
+          }}
+        >
+          {infoTitle && (
+            <Typography
+              sx={{
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                color: '#30403A',
+                mb: infoDescription ? 0.5 : 0,
+              }}
+            >
+              {infoTitle}
+            </Typography>
+          )}
+          {infoDescription && (
+            <Typography
+              sx={{
+                fontSize: '0.8rem',
+                color: 'rgba(48, 64, 58, 0.78)',
+                lineHeight: 1.45,
+              }}
+            >
+              {infoDescription}
+            </Typography>
+          )}
+        </Box>
+      )}
     </Box>
   );
 };

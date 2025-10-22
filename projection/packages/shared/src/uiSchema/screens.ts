@@ -35,43 +35,6 @@ export const DETERMINISTIC_SCREEN: ScreenDefinition = {
       },
     },
     {
-      id: 'features',
-      title: 'Choose Your Analysis Method',
-      description: 'Three ways to analyze your retirement',
-      fields: [],
-      layout: 'grid',
-      metadata: {
-        type: 'feature-cards',
-        items: [
-          {
-            id: 'deterministic',
-            title: 'Deterministic',
-            description:
-              'Project your retirement with a single set of fixed assumptions. See one clear scenario for your financial future based on conservative estimates.',
-            cta: 'Get Started',
-            navigateTo: 'deterministic',
-          },
-          {
-            id: 'whatif',
-            title: 'What-If Analysis',
-            description:
-              'Compare multiple retirement scenarios side-by-side to explore different strategies. Understand how changes in spending or savings affect your outcomes.',
-            cta: 'Compare Scenarios',
-            navigateTo: 'whatif',
-          },
-          {
-            id: 'montecarlo',
-            title: 'Monte Carlo',
-            description:
-              'Run 10,000+ simulations to see the probability of retirement success. Get a realistic range of outcomes with best, median, and worst-case scenarios.',
-            cta: 'Run Simulations',
-            navigateTo: 'monteCarlo',
-            badge: 'PREMIUM',
-          },
-        ],
-      },
-    },
-    {
       id: 'savings',
       title: 'Savings & Contributions',
       description: 'Current balance and annual contributions',
@@ -246,20 +209,27 @@ export const WHATIF_SCREEN: ScreenDefinition = {
       id: 'baseline',
       title: 'Baseline Scenario',
       description: 'Your default assumptions',
-      fields: ['age', 'contributionRate', 'expectedReturn', 'inflation', 'currentBalance'],
+      fields: ['scenarioName', 'age', 'savingsRate', 'expectedReturn', 'inflation', 'currentSavings'],
       layout: 'vertical',
       collapsible: true,
       defaultCollapsed: false,
+      metadata: {
+        scenarioType: 'baseline',
+        scenarioFields: ['scenarioName', 'age', 'savingsRate', 'expectedReturn', 'inflation', 'currentSavings'],
+      },
     },
     {
       id: 'scenarios',
       title: 'Alternative Scenarios',
       description: 'Create and compare different what-if scenarios',
-      fields: [],
+      fields: ['scenarioName', 'age', 'savingsRate', 'expectedReturn', 'inflation', 'currentSavings'],
       layout: 'vertical',
       metadata: {
         dynamicContent: true,
         description: 'Add, edit, or delete scenarios to explore different outcomes',
+        scenarioType: 'whatif',
+        allowClone: true,
+        allowDelete: true,
       },
     },
   ],

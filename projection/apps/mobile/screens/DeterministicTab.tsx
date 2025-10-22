@@ -10,6 +10,7 @@ import {
 import { LineChart, Grid, YAxis, XAxis } from "react-native-svg-charts";
 import * as scale from "d3-scale";
 import { simulateDeterministic, useProjectionStore } from "@projection/core";
+import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY } from "@projection/shared";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { HelpIcon } from "../components";
 import { useDeterministicBaseline } from "../contexts/DeterministicContext";
@@ -22,12 +23,19 @@ import {
   getScreenDefinition,
   InputFieldDefinition,
   ScreenDefinition,
+  getSliderMetadata,
+  resolveSliderMilestones,
+  resolveSliderRangeIndicators,
+  resolveSliderState,
+  SliderMilestoneConfig,
 } from "@projection/shared";
 
-const chartAxisTextStyle = { fontSize: 10, fill: "rgba(48, 64, 58, 0.8)" };
-const deterministicStrokeStyle = { stroke: "#69B47A", strokeWidth: 2 };
+const chartAxisTextStyle = { fontSize: 10, fill: COLORS.textSecondary };
+const deterministicStrokeStyle = { stroke: COLORS.secondary, strokeWidth: 2 };
 
 const deterministicScreen: ScreenDefinition = getScreenDefinition("deterministic");
+const expectedReturnFieldDefinition = getFieldDefinition("expectedReturn");
+const inflationFieldDefinition = getFieldDefinition("inflation");
 
 const HELP_TOPIC_MAP_MOBILE: Record<string, string> = {
   age_help: "deterministic_age",
@@ -59,11 +67,7 @@ function formatCurrency(value: number | undefined): string {
   return `$${Math.round(value).toLocaleString()}`;
 }
 
-type SliderMilestone = {
-  value: number;
-  label: string;
-  description: string;
-};
+type SliderMilestone = SliderMilestoneConfig;
 
 const MARKER_DOT_DIAMETER = 12;
 const TOOLTIP_WIDTH = 180;
@@ -77,59 +81,59 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 16,
-    gap: 8,
+    padding: SPACING.lg,
+    gap: SPACING.sm,
     paddingBottom: 120,
   },
   card: {
-    marginBottom: 12,
+    marginBottom: SPACING.md,
   },
   inputSpacing: {
-    marginBottom: 12,
+    marginBottom: SPACING.md,
   },
   sectionContainer: {
-    marginBottom: 20,
+    marginBottom: SPACING.xl,
   },
   fieldWrapper: {
-    marginBottom: 12,
+    marginBottom: SPACING.md,
   },
   resultText: {
-    marginTop: 16,
+    marginTop: SPACING.lg,
     fontWeight: "700",
-    color: "#30403A",
+    color: COLORS.textPrimary,
   },
   finalResultCard: {
-    marginTop: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 16,
-    backgroundColor: "#E8F5E9",
+    marginTop: SPACING.lg,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.lg,
+    backgroundColor: COLORS.resultHighlight,
     borderLeftWidth: 4,
-    borderLeftColor: "#69B47A",
-    borderRadius: 4,
+    borderLeftColor: COLORS.resultBorder,
+    borderRadius: BORDER_RADIUS.sm,
   },
   finalResultTitle: {
     fontWeight: "700",
-    color: "#2E7D32",
-    marginBottom: 8,
+    color: COLORS.resultText,
+    marginBottom: SPACING.sm,
   },
   finalResultValue: {
-    fontSize: 18,
+    fontSize: TYPOGRAPHY.fontSize.xl,
     fontWeight: "800",
-    color: "#1B5E20",
+    color: COLORS.resultValueText,
   },
   realBalanceText: {
-    marginTop: 12,
+    marginTop: SPACING.md,
     fontWeight: "600",
-    color: "#558B2F",
+    color: COLORS.success,
   },
   realBalanceValue: {
-    fontSize: 16,
+    fontSize: TYPOGRAPHY.fontSize.lg,
     fontWeight: "700",
-    color: "#33691E",
+    color: COLORS.resultValueText,
   },
   errorText: {
-    marginTop: 12,
-    color: "#c62828",
+    marginTop: SPACING.md,
+    color: COLORS.error,
   },
   chartContainer: {
     height: 220,
@@ -138,7 +142,7 @@ const styles = StyleSheet.create({
   sliderWithMarkers: {
     width: "100%",
     paddingTop: 40,
-    paddingBottom: 24,
+    paddingBottom: SPACING.xxl,
     position: "relative",
   },
   sliderBase: {
@@ -166,12 +170,12 @@ const styles = StyleSheet.create({
     height: MARKER_DOT_DIAMETER,
     borderRadius: MARKER_DOT_DIAMETER / 2,
     borderWidth: 2,
-    borderColor: "rgba(105, 180, 122, 0.4)",
-    backgroundColor: "#ffffff",
+    borderColor: `${COLORS.secondary}66`, // 40% opacity
+    backgroundColor: COLORS.surface,
   },
   sliderMarkerDotActive: {
-    borderColor: "#69B47A",
-    backgroundColor: "rgba(105, 180, 122, 0.2)",
+    borderColor: COLORS.secondary,
+    backgroundColor: `${COLORS.secondary}33`, // 20% opacity
   },
   sliderMarkerTooltip: {
     position: "absolute",
@@ -179,11 +183,11 @@ const styles = StyleSheet.create({
     width: TOOLTIP_WIDTH,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: "#FFFFFF",
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: "rgba(48, 64, 58, 0.18)",
-    shadowColor: "#000000",
+    borderColor: COLORS.border,
+    shadowColor: COLORS.shadow,
     shadowOpacity: 0.12,
     shadowRadius: 3,
     shadowOffset: { width: 0, height: 1 },
@@ -191,13 +195,13 @@ const styles = StyleSheet.create({
     pointerEvents: "none",
   },
   sliderMarkerTooltipTitle: {
-    fontSize: 11,
+    fontSize: TYPOGRAPHY.fontSize.xs,
     fontWeight: "700",
-    color: "#30403A",
+    color: COLORS.textPrimary,
   },
   sliderMarkerTooltipDescription: {
-    fontSize: 11,
-    color: "#60706A",
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    color: COLORS.textSecondary,
     marginTop: 2,
   },
   sliderMarkerTooltipArrow: {
@@ -207,19 +211,19 @@ const styles = StyleSheet.create({
     marginLeft: -6,
     width: 12,
     height: 12,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: COLORS.surface,
     borderLeftWidth: 1,
     borderBottomWidth: 1,
-    borderColor: "rgba(48, 64, 58, 0.18)",
+    borderColor: COLORS.border,
     transform: [{ rotate: "45deg" }],
   },
   actionButtons: {
     flexDirection: 'row',
-    gap: 8,
-    marginTop: 12,
+    gap: SPACING.sm,
+    marginTop: SPACING.md,
   },
   calculateButton: {
-    marginBottom: 8,
+    marginBottom: SPACING.sm,
   },
 });
 
@@ -238,8 +242,6 @@ const DeterministicTab: React.FC = () => {
   const [inflation, setInflation] = useState(input?.inflation ?? 2.5);
   const [error, setError] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState({ visible: false, message: '' });
-  const [activeReturnMilestone, setActiveReturnMilestone] = useState<SliderMilestone | null>(null);
-  const [activeInflationMilestone, setActiveInflationMilestone] = useState<SliderMilestone | null>(null);
   const [returnSliderWidth, setReturnSliderWidth] = useState(0);
   const [inflationSliderWidth, setInflationSliderWidth] = useState(0);
   const [showResults, setShowResults] = useState(false); // Only show results when Calculate is clicked
@@ -251,6 +253,17 @@ const DeterministicTab: React.FC = () => {
       contribution: { value: contribution, set: setContribution },
       expectedReturn: { value: rate, set: setRate },
       inflation: { value: inflation, set: setInflation },
+    }),
+    [age, retireAge, balance, contribution, rate, inflation],
+  );
+  const formState = useMemo(
+    () => ({
+      age,
+      retirementAge: retireAge,
+      currentBalance: balance,
+      contribution,
+      expectedReturn: rate,
+      inflation,
     }),
     [age, retireAge, balance, contribution, rate, inflation],
   );
@@ -297,41 +310,59 @@ const DeterministicTab: React.FC = () => {
     }
   }, [route.params, setInput, setResult, setLoading]);
 
-  const returnMilestones = useMemo<SliderMilestone[]>(() => [
-    {
-      value: 5,
-      label: "5% • Low",
-      description: "Conservative assumption; aligns with cautious portfolio mix.",
-    },
-    {
-      value: 8,
-      label: "8% • Average",
-      description: "Historic long-term market average for balanced portfolios.",
-    },
-    {
-      value: 12,
-      label: "12% • High",
-      description: "Aggressive expectation; assumes strong equity performance.",
-    },
-  ], []);
+  const returnMilestones = useMemo<SliderMilestone[]>(() => {
+    const metadata = getSliderMetadata(expectedReturnFieldDefinition);
+    return resolveSliderMilestones(metadata);
+  }, []);
 
-  const inflationMilestones = useMemo<SliderMilestone[]>(() => [
-    {
-      value: 2,
-      label: "2% • Target",
-      description: "Matches Federal Reserve long-term target inflation.",
+  const inflationMilestones = useMemo<SliderMilestone[]>(() => {
+    const metadata = getSliderMetadata(inflationFieldDefinition);
+    return resolveSliderMilestones(metadata);
+  }, []);
+
+  const getSliderPresentation = useCallback(
+    (
+      field: InputFieldDefinition,
+      value: number,
+      options?: { dynamicMax?: number },
+    ) => {
+      const metadata = getSliderMetadata(field);
+      const rangeIndicators = resolveSliderRangeIndicators(metadata, { formState });
+      const sliderState = resolveSliderState(metadata, {
+        value,
+        formState,
+        dynamicMax: options?.dynamicMax,
+      });
+      const trackColor =
+        sliderState?.trackColor ??
+        sliderState?.badgeColor ??
+        metadata?.theme?.track?.defaultColor ??
+        COLORS.secondary;
+
+      const infoBox = sliderState?.info
+        ? {
+            title: sliderState.info.title ?? "",
+            description: sliderState.info.description ?? "",
+            backgroundColor:
+              sliderState.backgroundColor ?? `${COLORS.secondary}1F`, // 12% opacity
+          }
+        : undefined;
+
+      return {
+        badge: sliderState
+          ? {
+              label: sliderState.label,
+              color: sliderState.badgeColor,
+            }
+          : undefined,
+        trackColor,
+        infoBox,
+        rangeIndicators,
+        milestones: resolveSliderMilestones(metadata),
+      };
     },
-    {
-      value: 3.5,
-      label: "3.5% • Elevated",
-      description: "Reflects periods of moderate inflation pressure.",
-    },
-    {
-      value: 5,
-      label: "5% • High",
-      description: "High inflation environment; plan for higher expenses.",
-    },
-  ], []);
+    [formState],
+  );
 
   useEffect(() => {
     setInput({ age, retireAge, balance, contribution, rate, inflation });
@@ -369,51 +400,17 @@ const DeterministicTab: React.FC = () => {
     }
   };
 
-  const updateReturnMilestone = useCallback(
-    (value: number) => {
-      const proximity = 0.4;
-      const match = returnMilestones.find((milestone) => Math.abs(milestone.value - value) <= proximity);
-      setActiveReturnMilestone(match ?? null);
-    },
-    [returnMilestones],
-  );
+  const handleRateChange = useCallback((value: number) => {
+    setRate(value);
+  }, []);
 
-  const updateInflationMilestone = useCallback(
-    (value: number) => {
-      const proximity = 0.25;
-      const match = inflationMilestones.find((milestone) => Math.abs(milestone.value - value) <= proximity);
-      setActiveInflationMilestone(match ?? null);
-    },
-    [inflationMilestones],
-  );
-
-  const handleRateChange = useCallback(
-    (value: number) => {
-      setRate(value);
-      updateReturnMilestone(value);
-    },
-    [updateReturnMilestone],
-  );
-
-  const handleInflationChange = useCallback(
-    (value: number) => {
-      setInflation(value);
-      updateInflationMilestone(value);
-    },
-    [updateInflationMilestone],
-  );
-
-  useEffect(() => {
-    updateReturnMilestone(rate);
-  }, [rate, updateReturnMilestone]);
-
-  useEffect(() => {
-    updateInflationMilestone(inflation);
-  }, [inflation, updateInflationMilestone]);
+  const handleInflationChange = useCallback((value: number) => {
+    setInflation(value);
+  }, []);
 
   const renderField = useCallback(
     (field: InputFieldDefinition) => {
-      const binding = fieldBindings[field.id];
+      const binding = (fieldBindings as Record<string, { value: number; set: React.Dispatch<React.SetStateAction<number>> } >)[field.id];
       if (!binding) {
         return null;
       }
@@ -422,157 +419,64 @@ const DeterministicTab: React.FC = () => {
       const helpIcon = helpTopicId ? <HelpIcon topicId={helpTopicId} /> : undefined;
 
       if (field.type === "slider") {
-        if (field.id === "contribution") {
-          const standardLimit = 23500;
-          const catchUpLimit = 30500;
-          const dynamicMax = age >= 50 ? catchUpLimit : standardLimit;
-          const status =
-            contribution <= standardLimit
-              ? {
-                  badge: "2025 Limit",
-                  color: "#69B47A",
-                  infoTitle: "✓ Within 2025 Limit",
-                  infoDescription: "You can contribute up to $23,500 in 2025 (standard limit).",
-                  background: "rgba(105, 180, 122, 0.1)",
-                }
-              : age >= 50 && contribution <= catchUpLimit
-              ? {
-                  badge: "Catch-up (50+)",
-                  color: "#FFB74D",
-                  infoTitle: "✓ Catch-up Eligible",
-                  infoDescription: "You're 50+, so you can contribute up to $30,500 ($23.5k + $7k catch-up).",
-                  background: "rgba(255, 183, 77, 0.1)",
-                }
-              : {
-                  badge: "Over Limit",
-                  color: "#FF6B6B",
-                  infoTitle: "⚠ Over Contribution Limit",
-                  infoDescription: "Your contribution exceeds the IRS limit. Consider reducing it.",
-                  background: "rgba(255, 107, 107, 0.1)",
-                };
+        const dynamicMax =
+          typeof field.constraints.conditionalMax === "function"
+            ? field.constraints.conditionalMax(formState)
+            : undefined;
+        const sliderPresentation = getSliderPresentation(field, binding.value, {
+          dynamicMax,
+        });
+        const sliderValueFormatter =
+          typeof field.constraints.format === "function"
+            ? field.constraints.format
+            : undefined;
 
-          return (
-            <SliderWithInfo
-              key={field.id}
-              title={`${field.label}:`}
-              value={binding.value}
-              min={field.constraints.min}
-              max={dynamicMax}
-              step={field.constraints.step}
-              suffix=" ($)"
-              onValueChange={binding.set}
-              trackColor={status.color}
-              badge={{
-                label: status.badge,
-                color: status.color,
-              }}
-              rangeIndicators={[
-                { label: "$0", value: 0 },
-                { label: "$23.5k (2025)", value: standardLimit },
-                ...(age >= 50 ? [{ label: "$30.5k (50+)", value: catchUpLimit }] : []),
-              ]}
-              infoBox={{
-                title: status.infoTitle,
-                description: status.infoDescription,
-                backgroundColor: status.background,
-              }}
-            />
-          );
-        }
+        const milestoneThreshold =
+          field.id === "expectedReturn"
+            ? Math.max(
+                (expectedReturnFieldDefinition.constraints.step ?? 0.5) * 1.2,
+                0.3,
+              )
+            : field.id === "inflation"
+            ? Math.max(
+                (inflationFieldDefinition.constraints.step ?? 0.1) * 1.5,
+                0.2,
+              )
+            : undefined;
 
-        if (field.id === "expectedReturn") {
-          return (
-            <SliderWithInfo
-              key={field.id}
-              title={`${field.label}:`}
-              value={binding.value}
-              min={field.constraints.min}
-              max={field.constraints.max}
-              step={field.constraints.step}
-              suffix="%"
-              onValueChange={handleRateChange}
-              trackColor={rate < 5 ? "#FF6B6B" : rate <= 8 ? "#FFB74D" : "#69B47A"}
-              badge={{
-                label: rate < 5 ? "Conservative" : rate <= 8 ? "Balanced" : "Aggressive",
-                color: rate < 5 ? "#FF6B6B" : rate <= 8 ? "#FFB74D" : "#69B47A",
-              }}
-              rangeIndicators={[
-                { label: "0%", value: 0 },
-                { label: "5% (Low)", value: 5 },
-                { label: "8% (Avg)", value: 8 },
-                { label: "15%", value: 15 },
-              ]}
-              milestones={returnMilestones}
-              infoBox={{
-                title:
-                  rate < 5
-                    ? "🛡️ Conservative Strategy"
-                    : rate <= 8
-                    ? "⚖️ Balanced Approach"
-                    : "📈 Aggressive Growth",
-                description:
-                  rate < 5
-                    ? "Lower expected returns; suitable for risk-averse investors or near retirement."
-                    : rate <= 8
-                    ? "Moderate returns reflecting historical market averages; suitable for most investors."
-                    : "Higher expected returns; assumes strong equity performance and higher risk tolerance.",
-                backgroundColor:
-                  rate < 5
-                    ? "rgba(255, 107, 107, 0.1)"
-                    : rate <= 8
-                    ? "rgba(255, 183, 77, 0.1)"
-                    : "rgba(105, 180, 122, 0.1)",
-              }}
-            />
-          );
-        }
+        const onValueChange =
+          field.id === "expectedReturn"
+            ? handleRateChange
+            : field.id === "inflation"
+            ? handleInflationChange
+            : binding.set;
 
-        if (field.id === "inflation") {
-          return (
-            <SliderWithInfo
-              key={field.id}
-              title={`${field.label}:`}
-              value={binding.value}
-              min={field.constraints.min}
-              max={field.constraints.max}
-              step={field.constraints.step}
-              suffix="%"
-              onValueChange={handleInflationChange}
-              trackColor={inflation < 2 ? "#69B47A" : inflation <= 4 ? "#FFB74D" : "#FF6B6B"}
-              badge={{
-                label: inflation < 2 ? "Low" : inflation <= 4 ? "Moderate" : "High",
-                color: inflation < 2 ? "#69B47A" : inflation <= 4 ? "#FFB74D" : "#FF6B6B",
-              }}
-              rangeIndicators={[
-                { label: "0%", value: 0 },
-                { label: "2% (Target)", value: 2 },
-                { label: "4% (Moderate)", value: 4 },
-                { label: "6%", value: 6 },
-              ]}
-              milestones={inflationMilestones}
-              infoBox={{
-                title:
-                  inflation < 2
-                    ? "✓ Low Inflation"
-                    : inflation <= 4
-                    ? "⚠ Moderate Inflation"
-                    : "🔴 High Inflation",
-                description:
-                  inflation < 2
-                    ? "Strong purchasing power preservation; your $1 today buys nearly as much in the future."
-                    : inflation <= 4
-                    ? "Normal inflation range; your purchasing power will gradually decline."
-                    : "High inflation environment; plan for significantly higher expenses in the future.",
-                backgroundColor:
-                  inflation < 2
-                    ? "rgba(105, 180, 122, 0.1)"
-                    : inflation <= 4
-                    ? "rgba(255, 183, 77, 0.1)"
-                    : "rgba(255, 107, 107, 0.1)",
-              }}
-            />
-          );
-        }
+        return (
+          <SliderWithInfo
+            key={field.id}
+            title={`${field.label}:`}
+            value={binding.value}
+            min={field.constraints.min}
+            max={dynamicMax ?? field.constraints.max}
+            step={field.constraints.step}
+            suffix={field.constraints.suffix ?? ""}
+            valueFormatter={sliderValueFormatter}
+            onValueChange={onValueChange}
+            trackColor={sliderPresentation.trackColor}
+            badge={sliderPresentation.badge}
+            rangeIndicators={sliderPresentation.rangeIndicators}
+            infoBox={sliderPresentation.infoBox}
+            milestones={
+              (field.id === "expectedReturn"
+                ? returnMilestones
+                : field.id === "inflation"
+                ? inflationMilestones
+                : sliderPresentation.milestones
+              ).map(m => ({ ...m, description: m.description ?? "" }))
+            }
+            milestoneThreshold={milestoneThreshold}
+          />
+        );
       }
 
       return (
@@ -590,12 +494,14 @@ const DeterministicTab: React.FC = () => {
       fieldBindings,
       age,
       contribution,
-      rate,
-      inflation,
+      getSliderPresentation,
       handleRateChange,
       handleInflationChange,
       returnMilestones,
       inflationMilestones,
+      rate,
+      inflation,
+      formState,
     ],
   );
 
@@ -681,7 +587,7 @@ const DeterministicTab: React.FC = () => {
           {deterministicScreen.sections.map((section) => (
             <View key={section.id} style={styles.sectionContainer}>
               <SectionHeader
-                title={section.title}
+                title={section.title ?? ""}
                 subtitle={section.description ?? ""}
               />
               {section.fields.map((fieldId) => {

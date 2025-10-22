@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, Dimensions } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -12,6 +12,7 @@ import {
   Snackbar,
   Card,
 } from 'react-native-paper';
+import { COLORS, SPACING } from '@projection/shared';
 import {
   WhatIfScenario,
   DEFAULT_BASELINE,
@@ -20,21 +21,62 @@ import {
   compareScenarios,
   calculateDifference,
   getHelpTopic,
+  getScreenDefinition,
+  getFieldDefinition,
+  ScreenDefinition,
+  InputFieldDefinition,
 } from '@projection/shared';
 import { ScenarioCard, ComparisonChart, HelpIcon, UpgradeBanner } from '../components';
 import { useFeatureLimit } from '../contexts/TierContext';
 
+const normalizeScenario = (scenario: WhatIfScenario): WhatIfScenario => {
+  const savingsRate = scenario.savingsRate ?? scenario.contribution ?? 0;
+  return {
+    ...scenario,
+    savingsRate,
+    contribution: savingsRate,
+  };
+};
+
 export default function WhatIfScreen() {
   const theme = useTheme();
   const maxScenarios = useFeatureLimit('maxScenarios');
+  const whatIfScreen = useMemo<ScreenDefinition>(() => getScreenDefinition('whatif'), []);
+  const baselineFieldDefinitions = useMemo<InputFieldDefinition[]>(() => {
+    const section = whatIfScreen.sections.find((s) => s.id === 'baseline');
+    if (!section) {
+      return [];
+    }
+    return section.fields.map((fieldId) => getFieldDefinition(fieldId));
+  }, [whatIfScreen]);
+  const scenarioFieldDefinitions = useMemo<InputFieldDefinition[]>(() => {
+    const section = whatIfScreen.sections.find((s) => s.id === 'scenarios');
+    if (!section || section.fields.length === 0) {
+      return baselineFieldDefinitions;
+    }
+    return section.fields.map((fieldId) => getFieldDefinition(fieldId));
+  }, [whatIfScreen, baselineFieldDefinitions]);
   
-  const [baseline, setBaseline] = useState<WhatIfScenario>(DEFAULT_BASELINE);
+  const [baseline, setBaseline] = useState<WhatIfScenario>(() => normalizeScenario(DEFAULT_BASELINE));
   const [scenarios, setScenarios] = useState<WhatIfScenario[]>([
-    createScenario(1),
+    normalizeScenario(createScenario(1)),
   ]);
   const [selectedScenario, setSelectedScenario] = useState<string | null>(null);
   const [deleteDialog, setDeleteDialog] = useState(false);
   const [snackbar, setSnackbar] = useState({ visible: false, message: '' });
+
+  const normalizeUpdates = useCallback(
+    (updates: Partial<WhatIfScenario>): Partial<WhatIfScenario> => {
+      if (updates.savingsRate != null && updates.contribution == null) {
+        return { ...updates, contribution: updates.savingsRate };
+      }
+      if (updates.contribution != null && updates.savingsRate == null) {
+        return { ...updates, savingsRate: updates.contribution };
+      }
+      return updates;
+    },
+    [],
+  );
 
   // Load scenarios from AsyncStorage on mount
   useEffect(() => {
@@ -58,7 +100,8 @@ export default function WhatIfScreen() {
     try {
       const saved = await AsyncStorage.getItem('whatif_scenarios');
       if (saved) {
-        setScenarios(JSON.parse(saved));
+        const parsed: WhatIfScenario[] = JSON.parse(saved);
+        setScenarios(parsed.map(normalizeScenario));
       }
     } catch (error) {
       console.error('Failed to load scenarios:', error);
@@ -70,7 +113,7 @@ export default function WhatIfScreen() {
       setSnackbar({ visible: true, message: `Maximum ${maxScenarios} scenarios reached` });
       return;
     }
-    const newScenario = createScenario(scenarios.length + 1);
+    const newScenario = normalizeScenario(createScenario(scenarios.length + 1));
     setScenarios([...scenarios, newScenario]);
     setSnackbar({ visible: true, message: 'New scenario added' });
   };
@@ -80,7 +123,7 @@ export default function WhatIfScreen() {
       setSnackbar({ visible: true, message: `Maximum ${maxScenarios} scenarios reached` });
       return;
     }
-    const cloned = cloneScenario(scenario, scenarios.length + 1);
+    const cloned = normalizeScenario(cloneScenario(scenario, scenarios.length + 1));
     setScenarios([...scenarios, cloned]);
     setSnackbar({ visible: true, message: `Cloned ${scenario.name}` });
   };
@@ -100,12 +143,15 @@ export default function WhatIfScreen() {
   };
 
   const handleUpdateScenario = (id: string, updates: Partial<WhatIfScenario>) => {
+    const normalizedUpdates = normalizeUpdates(updates);
     if (id === 'baseline') {
-      setBaseline({ ...baseline, ...updates });
+      setBaseline((prev) => normalizeScenario({ ...prev, ...normalizedUpdates }));
     } else {
-      setScenarios(scenarios.map(s => 
-        s.id === id ? { ...s, ...updates } : s
-      ));
+      setScenarios((prev) =>
+        prev.map((s) =>
+          s.id === id ? normalizeScenario({ ...s, ...normalizedUpdates }) : s,
+        ),
+      );
     }
   };
 
@@ -149,6 +195,7 @@ export default function WhatIfScreen() {
           </View>
           <ScenarioCard
             scenario={baseline}
+            fields={baselineFieldDefinitions}
             onUpdate={(updates: Partial<WhatIfScenario>) => handleUpdateScenario('baseline', updates)}
             isBaseline
           />
@@ -169,6 +216,7 @@ export default function WhatIfScreen() {
               <View key={scenario.id} style={styles.scenarioContainer}>
                 <ScenarioCard
                   scenario={scenario}
+                  fields={scenarioFieldDefinitions}
                   onUpdate={(updates: Partial<WhatIfScenario>) => handleUpdateScenario(scenario.id, updates)}
                   onDelete={() => handleDeleteScenario(scenario.id)}
                   onClone={() => handleCloneScenario(scenario)}
@@ -242,8 +290,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    padding: 16,
-    paddingTop: 8,
+    padding: SPACING.lg,
+    paddingTop: SPACING.md,
   },
   headerWithHelp: {
     flexDirection: 'row',
@@ -252,30 +300,30 @@ const styles = StyleSheet.create({
   },
   title: {
     fontWeight: '700',
-    marginBottom: 4,
+    marginBottom: SPACING.xs,
   },
   subtitle: {
-    color: '#666',
+    color: COLORS.textSecondary,
   },
   section: {
-    padding: 16,
-    paddingTop: 8,
+    padding: SPACING.lg,
+    paddingTop: SPACING.md,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: SPACING.md,
   },
   sectionTitle: {
     fontWeight: '600',
   },
   scenarioContainer: {
-    marginBottom: 16,
+    marginBottom: SPACING.lg,
   },
   fab: {
     position: 'absolute',
-    right: 16,
-    bottom: 16,
+    right: SPACING.lg,
+    bottom: SPACING.lg,
   },
 });

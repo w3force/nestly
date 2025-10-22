@@ -7,7 +7,12 @@ export interface WhatIfScenario {
   id: string;
   name: string;
   age: number;                 // Current age
-  contribution: number;        // Annual contribution as % of income (0-100)
+  savingsRate: number;         // Annual contribution as % of income (0-100)
+  /**
+   * @deprecated Use savingsRate instead.
+   * Kept for backward compatibility with existing UI until fully migrated.
+   */
+  contribution?: number;
   returnRate: number;          // Expected annual return % (0-15)
   inflation: number;           // Expected inflation % (0-10)
   currentSavings: number;      // Current balance in dollars
@@ -36,6 +41,7 @@ export const DEFAULT_BASELINE: WhatIfScenario = {
   id: 'baseline',
   name: 'Baseline',
   age: 30,
+  savingsRate: 10,
   contribution: 10,
   returnRate: 7,
   inflation: 3,
@@ -46,6 +52,7 @@ export const DEFAULT_WHATIF: WhatIfScenario = {
   id: 'whatif1',
   name: 'What-If 1',
   age: 30,
+  savingsRate: 15,
   contribution: 15,
   returnRate: 8,
   inflation: 3,
@@ -58,6 +65,7 @@ export function createScenario(index: number): WhatIfScenario {
     id: `whatif${index}`,
     name: `What-If ${index}`,
     age: 30,
+    savingsRate: 10,
     contribution: 10,
     returnRate: 7,
     inflation: 3,

@@ -19,18 +19,18 @@ import SaveIcon from "@mui/icons-material/Save";
 import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
 import { useMutation } from "@tanstack/react-query";
 import { useProjectionStore } from "@projection/core";
+import { COLORS } from "@projection/shared";
 import { useUser } from "../../contexts/UserContext";
 import { DeterministicForm } from "../../components/DeterministicForm";
 import { HelpTooltip } from "../../components/HelpTooltip";
 import { InfoCard } from "../../components/InfoCard";
 import { helpContent } from "../../lib/helpContent";
-import { BottomNav } from "../../components/BottomNav";
 
 const ReactECharts = dynamic(() => import("echarts-for-react"), {
   ssr: false,
 }) as React.ComponentType<any>;
 
-export default function CalculatorPage(): JSX.Element {
+export default function CalculatorPage() {
   const {
     input,
     setInput,
@@ -320,55 +320,39 @@ export default function CalculatorPage(): JSX.Element {
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#F5F5F5",
-        backgroundImage:
-          "radial-gradient(circle at 20% 20%, rgba(105, 180, 122, 0.18), transparent 55%), radial-gradient(circle at 80% 0%, rgba(74, 189, 172, 0.15), transparent 50%)",
-        py: { xs: 6, md: 8 },
+        backgroundColor: COLORS.background,
+        py: { xs: 4, md: 6 },
       }}
     >
-      <Container maxWidth="md" sx={{ px: { xs: 2, md: 4 } }}>
-        <Box sx={{ textAlign: "center", mb: { xs: 4, md: 5 } }}>
+      <Container maxWidth="lg" sx={{ px: { xs: 2, md: 3 } }}>
+        <Box sx={{ mb: 4 }}>
           <Typography
-            variant="overline"
-            sx={{
-              letterSpacing: 3,
-              color: "rgba(74, 189, 172, 0.9)",
-              fontWeight: 600,
-            }}
-          >
-            Nestly Planner
-          </Typography>
-          <Typography
-            variant="h3"
+            variant="h4"
             sx={{
               fontWeight: 700,
-              fontSize: { xs: "2rem", md: "2.75rem" },
-              color: "#30403A",
+              color: COLORS.textPrimary,
+              mb: 0.5,
             }}
           >
             401(k) Projection Calculator
           </Typography>
           <Typography
+            variant="body2"
             sx={{
-              mt: 1.5,
-              color: "rgba(48, 64, 58, 0.75)",
-              maxWidth: "60ch",
-              mx: "auto",
+              color: COLORS.textSecondary,
             }}
           >
-            Explore deterministic projections to understand how your retirement savings grow over
-            time. Adjust assumptions and compare real vs nominal balances instantly.
+            Explore deterministic projections to understand how your retirement savings grow over time
           </Typography>
         </Box>
 
-        <Box
+        <Card
           sx={{
-            backgroundColor: "rgba(255,255,255,0.92)",
-            borderRadius: 4,
-            boxShadow: "0 30px 80px rgba(48, 64, 58, 0.12)",
-            border: "1px solid rgba(74, 189, 172, 0.15)",
-            backdropFilter: "blur(16px)",
-            p: { xs: 2.5, md: 4 },
+            backgroundColor: COLORS.cardBackground,
+            borderRadius: 2,
+            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
+            border: `1px solid ${COLORS.cardBorder}`,
+            p: { xs: 2, md: 3 },
           }}
         >
           <InfoCard
@@ -403,12 +387,13 @@ export default function CalculatorPage(): JSX.Element {
               <CircularProgress />
             </Box>
           )}
+        </Card>
 
-          {mutation.isError && (
-            <Alert severity="error" sx={{ my: 2 }}>
-              Error fetching projection. Please try again.
-            </Alert>
-          )}
+        {mutation.isError && (
+          <Alert severity="error" sx={{ my: 2 }}>
+            Error fetching projection. Please try again.
+          </Alert>
+        )}
 
           {series.length > 0 && !loading && (
             <Box sx={{ mb: 3 }}>
@@ -428,14 +413,14 @@ export default function CalculatorPage(): JSX.Element {
                 variant="outlined"
                 sx={{
                   mt: 2,
-                  backgroundColor: "rgba(255,255,255,0.9)",
-                  borderColor: "rgba(74, 189, 172, 0.25)",
-                  borderRadius: 3,
+                  backgroundColor: COLORS.cardBackground,
+                  borderColor: COLORS.cardBorder,
+                  borderRadius: 2,
                 }}
               >
                 <CardContent>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 1 }}>
-                    <Typography variant="subtitle2" sx={{ color: "#2F5140" }}>
+                    <Typography variant="subtitle2" sx={{ color: COLORS.textPrimary, fontWeight: 600 }}>
                       Final Balances at Retirement
                     </Typography>
                     <HelpTooltip
@@ -450,7 +435,7 @@ export default function CalculatorPage(): JSX.Element {
                   >
                     <Box>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
-                        <Typography variant="body2" sx={{ color: "rgba(48, 64, 58, 0.72)", fontWeight: 600 }}>
+                        <Typography variant="body2" sx={{ color: COLORS.textSecondary, fontWeight: 600 }}>
                           Real (Today's $)
                         </Typography>
                         <HelpTooltip
@@ -459,7 +444,7 @@ export default function CalculatorPage(): JSX.Element {
                           size="small"
                         />
                       </Box>
-                      <Typography variant="h5" sx={{ color: "#30403A", fontWeight: 700 }}>
+                      <Typography variant="h5" sx={{ color: COLORS.textPrimary, fontWeight: 700 }}>
                         $
                         {result.realBalances
                           .at(-1)
@@ -467,14 +452,14 @@ export default function CalculatorPage(): JSX.Element {
                       </Typography>
                       <Typography
                         variant="caption"
-                        sx={{ display: "block", mt: 0.5, color: "rgba(48,64,58,0.65)" }}
+                        sx={{ display: "block", mt: 0.5, color: COLORS.textTertiary }}
                       >
                         Reflects today's buying power with your inflation assumption.
                       </Typography>
                     </Box>
                     <Box>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
-                        <Typography variant="body2" sx={{ color: "rgba(48, 64, 58, 0.72)", fontWeight: 600 }}>
+                        <Typography variant="body2" sx={{ color: COLORS.textSecondary, fontWeight: 600 }}>
                           Nominal (Future $)
                         </Typography>
                         <HelpTooltip
@@ -483,7 +468,7 @@ export default function CalculatorPage(): JSX.Element {
                           size="small"
                         />
                       </Box>
-                      <Typography variant="h6" sx={{ color: "#30403A" }}>
+                      <Typography variant="h6" sx={{ color: COLORS.textPrimary }}>
                         $
                         {result.nominalBalances
                           .at(-1)
@@ -491,7 +476,7 @@ export default function CalculatorPage(): JSX.Element {
                       </Typography>
                       <Typography
                         variant="caption"
-                        sx={{ display: "block", mt: 0.5, color: "rgba(48,64,58,0.65)" }}
+                        sx={{ display: "block", mt: 0.5, color: COLORS.textTertiary }}
                       >
                         Future dollars before adjusting for inflation.
                       </Typography>
@@ -506,8 +491,10 @@ export default function CalculatorPage(): JSX.Element {
                   startIcon={<SaveIcon />}
                   onClick={handleSaveScenario}
                   sx={{
-                    backgroundColor: "#69B47A",
-                    "&:hover": { backgroundColor: "#5AA468" },
+                    backgroundColor: COLORS.buttonSecondary,
+                    "&:hover": { backgroundColor: COLORS.buttonSecondaryHover },
+                    textTransform: "none",
+                    fontWeight: 600,
                   }}
                 >
                   Save as Baseline
@@ -517,12 +504,14 @@ export default function CalculatorPage(): JSX.Element {
                   startIcon={<CompareArrowsIcon />}
                   onClick={handleOpenWhatIf}
                   sx={{
-                    borderColor: "#4ABDAC",
-                    color: "#4ABDAC",
+                    borderColor: COLORS.buttonPrimary,
+                    color: COLORS.buttonPrimary,
                     "&:hover": {
-                      borderColor: "#3AA89C",
-                      backgroundColor: "rgba(74, 189, 172, 0.1)",
+                      borderColor: COLORS.buttonPrimaryHover,
+                      backgroundColor: `${COLORS.buttonPrimary}15`,
                     },
+                    textTransform: "none",
+                    fontWeight: 600,
                   }}
                 >
                   Open What-If Simulator
@@ -530,7 +519,6 @@ export default function CalculatorPage(): JSX.Element {
               </Stack>
             </>
           )}
-        </Box>
       </Container>
 
       <Snackbar
@@ -540,7 +528,6 @@ export default function CalculatorPage(): JSX.Element {
         message={snackbar.message}
       />
 
-      <BottomNav />
     </Box>
   );
 }

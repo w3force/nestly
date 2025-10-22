@@ -23,7 +23,6 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 import StarIcon from "@mui/icons-material/Star";
 import { useUser } from "../contexts/UserContext";
-import { BottomNav } from "./BottomNav";
 import { PlansComparison } from "./PlansComparison";
 
 export function ProfileContent() {
@@ -262,7 +261,6 @@ export function ProfileContent() {
         </Container>
       </Box>
 
-      <BottomNav />
     </>
   );
 }

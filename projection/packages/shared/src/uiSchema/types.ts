@@ -73,7 +73,10 @@ export interface InputFieldDefinition {
   category?: string;
 
   // Metadata
-  metadata?: Record<string, any>;
+  metadata?: {
+    slider?: SliderMetadata;
+    [key: string]: any;
+  };
 }
 
 export interface FieldGroup {
@@ -167,4 +170,89 @@ export interface FieldCategoryMapping {
     category: ValueCategory;
   }>;
   reverseLogic?: boolean; // For fields where lower is better
+}
+
+export type NavLinkPlacement = 'primary' | 'secondary' | 'cta';
+export type NavLinkVisibility = 'all' | 'web' | 'mobile';
+export type NavCtaStyle = 'outlined' | 'contained' | 'text';
+
+export interface NavigationLink {
+  id: string;
+  label: string;
+  href: string;
+  icon?: string;
+  placement?: NavLinkPlacement;
+  visibility?: NavLinkVisibility;
+  style?: NavCtaStyle;
+  metadata?: Record<string, any>;
+}
+
+export interface NavigationDefinition {
+  id: string;
+  brand: {
+    title: string;
+    logo?: string;
+    subtitle?: string;
+    href?: string;
+  };
+  links: NavigationLink[];
+  metadata?: Record<string, any>;
+}
+
+export interface SliderInfoContent {
+  title?: string;
+  description?: string;
+}
+
+export interface SliderStateThresholds {
+  min?: number;
+  max?: number;
+  minAge?: number;
+  maxAge?: number;
+  aboveDynamicMax?: boolean;
+}
+
+export interface SliderStateDisplay {
+  id: string;
+  label: string;
+  badgeColor: string;
+  textColor?: string;
+  trackColor?: string;
+  backgroundColor?: string;
+  info?: SliderInfoContent;
+  thresholds?: SliderStateThresholds;
+}
+
+export interface SliderRangeIndicatorConfig {
+  label: string;
+  value: number;
+  minAge?: number;
+  maxAge?: number;
+}
+
+export interface SliderMilestoneConfig {
+  value: number;
+  label: string;
+  description?: string;
+}
+
+export interface SliderSuggestionConfig {
+  label: string;
+  value: number;
+}
+
+export interface SliderMetadata {
+  rangeIndicators?: SliderRangeIndicatorConfig[];
+  milestones?: SliderMilestoneConfig[];
+  states?: SliderStateDisplay[];
+  suggestions?: SliderSuggestionConfig[];
+  theme?: {
+    track?: {
+      defaultColor?: string;
+      emptyColor?: string;
+    };
+    thumb?: {
+      color?: string;
+    };
+  };
 }

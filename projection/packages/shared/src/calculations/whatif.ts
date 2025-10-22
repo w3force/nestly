@@ -27,7 +27,8 @@ export function calculateProjection(scenario: WhatIfScenario): ProjectionPoint[]
   
   // Assuming $100k annual income for contribution calculation
   const annualIncome = 100000;
-  const annualContribution = annualIncome * (scenario.contribution / 100);
+  const savingsRate = scenario.savingsRate ?? scenario.contribution ?? 0;
+  const annualContribution = annualIncome * (savingsRate / 100);
   const realReturnRate = (scenario.returnRate - scenario.inflation) / 100;
 
   for (let year = 0; year <= years; year++) {
