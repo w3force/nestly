@@ -263,6 +263,12 @@ export default function QuickStartSection({
         <Text style={[styles.subtitleDescription, { color: theme.colors.onSurfaceVariant }]}>
           {description}
         </Text>
+        <View style={styles.statusPill}>
+          <Text style={[styles.statusText, { color: theme.colors.primary }]}>Free Forever</Text>
+        </View>
+        <Text style={[styles.privacyCopy, { color: theme.colors.onSurfaceVariant }]}>
+          We never send personal data to servers — calculations run entirely on your device.
+        </Text>
       </View>
 
       <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
@@ -541,20 +547,41 @@ export default function QuickStartSection({
 }
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingVertical: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 16,
   },
   header: {
-    marginBottom: 16,
+    marginBottom: 12,
     alignItems: 'center',
-    gap: 4,
+    gap: 10,
+  },
+  statusPill: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(74, 189, 172, 0.5)',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    marginTop: 4,
+    backgroundColor: 'rgba(74,189,172,0.08)',
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  privacyCopy: {
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'center',
+    lineHeight: 16,
   },
   title: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
+    marginTop: 2,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     textAlign: 'center',
   },
@@ -566,7 +593,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   card: {
-    marginBottom: 16,
+    marginBottom: 14,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: 'rgba(48,64,58,0.08)',
@@ -575,11 +602,11 @@ const styles = StyleSheet.create({
     shadowColor: 'transparent',
   },
   cardContent: {
-    paddingHorizontal: 18,
-    paddingVertical: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 18,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 18,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -614,7 +641,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   presetsLabel: {
-    marginBottom: 10,
+    marginBottom: 8,
   },
   smallLabel: {
     fontSize: 12,
@@ -669,7 +696,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     backgroundColor: '#FFFFFF',
-    paddingVertical: 28,
+    paddingVertical: 24,
     alignItems: 'center',
     marginBottom: 16,
   },
@@ -682,14 +709,14 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     borderWidth: 1.5,
     backgroundColor: '#FFFFFF',
-    marginBottom: 16,
+    marginBottom: 14,
     elevation: 0,
     shadowColor: 'transparent',
   },
   resultsContent: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    gap: 16,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    gap: 14,
   },
   resultsHeader: {
     gap: 4,
@@ -786,5 +813,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     textAlign: 'center',
     lineHeight: 16,
+    marginTop: 4,
   },
 });

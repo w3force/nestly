@@ -3,29 +3,23 @@
  * Renders deterministic calculator inputs using the shared UI schema.
  */
 
-import React, { FormEvent, useMemo } from "react";
+import React, { FormEvent, useMemo, useCallback } from "react";
 import {
   Alert,
   Box,
   Button,
   Grid,
   Stack,
-  TextField,
   Typography,
 } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
 import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
-import { ContributionSlider } from "./ContributionSlider";
-import { ReturnRateSlider } from "./ReturnRateSlider";
-import { InflationSlider } from "./InflationSlider";
-import { HelpTooltip } from "./HelpTooltip";
-import { helpContent } from "../lib/helpContent";
 import {
   getFieldDefinition,
   getScreenDefinition,
-  InputFieldDefinition,
   ScreenDefinition,
 } from "@projection/shared";
+import { SchemaFieldControl } from "./SchemaFieldControl";
 
 interface DeterministicFormProps {
   age: number;
@@ -47,153 +41,7 @@ interface DeterministicFormProps {
   onOpenWhatIf?: () => void;
 }
 
-type HelpTopicKey =
-  | "currentAge"
-  | "retirementAge"
-  | "currentBalance"
-  | "annualContribution"
-  | "expectedReturn"
-  | "inflation";
-
-const HELP_TOPIC_MAP: Record<string, HelpTopicKey> = {
-  age_help: "currentAge",
-  retirement_age_help: "retirementAge",
-  current_balance_help: "currentBalance",
-  annual_contribution_help: "annualContribution",
-  expected_return_help: "expectedReturn",
-  inflation_help: "inflation",
-};
-
 const deterministicScreen: ScreenDefinition = getScreenDefinition("deterministic");
-
-interface FieldBinding {
-  value: number;
-  onChange: (value: number) => void;
-}
-
-const currencyFormatter = (value: number) =>
-  value.toLocaleString(undefined, { maximumFractionDigits: 0 });
-
-function renderTextField(
-  field: InputFieldDefinition,
-  binding: FieldBinding,
-  adornment?: "currency"
-) {
-  const helpTopic = field.helpTopicId ? HELP_TOPIC_MAP[field.helpTopicId] : undefined;
-  const helper =
-    helpTopic && helpContent.calculator[helpTopic]
-      ? helpContent.calculator[helpTopic]
-      : undefined;
-
-  return (
-    <TextField
-      key={field.id}
-      label={
-        <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}>
-          {field.label}
-          {helper && (
-            <HelpTooltip
-              title={helper.title}
-              description={helper.description}
-              size="small"
-              placement="right"
-            />
-          )}
-        </Box>
-      }
-      type="number"
-      value={binding.value}
-      onChange={(e) => binding.onChange(Number(e.target.value))}
-      inputProps={{
-        min: field.constraints.min,
-        max: field.constraints.max,
-        step: field.constraints.step,
-      }}
-      fullWidth
-      size="small"
-      variant="outlined"
-      InputProps={
-        adornment === "currency"
-          ? {
-              startAdornment: "$",
-            }
-          : undefined
-      }
-    />
-  );
-}
-
-function renderSliderField(
-  field: InputFieldDefinition,
-  binding: FieldBinding,
-  context: {
-    age: number;
-    webDefaults?: Record<string, any>;
-  }
-) {
-  const helpTopic = field.helpTopicId ? HELP_TOPIC_MAP[field.helpTopicId] : undefined;
-  const helper =
-    helpTopic && helpContent.calculator[helpTopic]
-      ? helpContent.calculator[helpTopic]
-      : undefined;
-
-  if (field.id === "contribution") {
-    return (
-      <ContributionSlider
-        key={field.id}
-        age={context.age}
-        value={binding.value}
-        onChange={binding.onChange}
-        field={field}
-        platformDefaults={context.webDefaults}
-        help={
-          helper && {
-            title: helper.title,
-            description: helper.description,
-          }
-        }
-      />
-    );
-  }
-
-  if (field.id === "expectedReturn") {
-    return (
-      <ReturnRateSlider
-        key={field.id}
-        value={binding.value}
-        onChange={binding.onChange}
-        field={field}
-        platformDefaults={context.webDefaults}
-        help={
-          helper && {
-            title: helper.title,
-            description: helper.description,
-          }
-        }
-      />
-    );
-  }
-
-  if (field.id === "inflation") {
-    return (
-      <InflationSlider
-        key={field.id}
-        value={binding.value}
-        onChange={binding.onChange}
-        field={field}
-        platformDefaults={context.webDefaults}
-        help={
-          helper && {
-            title: helper.title,
-            description: helper.description,
-          }
-        }
-      />
-    );
-  }
-
-  return null;
-}
 
 export const DeterministicForm: React.FC<DeterministicFormProps> = ({
   age,
@@ -214,19 +62,46 @@ export const DeterministicForm: React.FC<DeterministicFormProps> = ({
   onSaveScenario,
   onOpenWhatIf,
 }) => {
-  const bindings: Record<string, FieldBinding> = useMemo(
+  const formState = useMemo(
     () => ({
-      age: { value: age, onChange: setAge },
-      retirementAge: { value: retireAge, onChange: setRetireAge },
-      currentBalance: { value: balance, onChange: setBalance },
-      contribution: { value: contribution, onChange: setContribution },
-      expectedReturn: { value: rate, onChange: setRate },
-      inflation: { value: inflation, onChange: setInflation },
+      age,
+      retirementAge: retireAge,
+      currentBalance: balance,
+      contribution,
+      expectedReturn: rate,
+      inflation,
     }),
-    [age, retireAge, balance, contribution, rate, inflation, setAge, setRetireAge, setBalance, setContribution, setRate, setInflation]
+    [age, retireAge, balance, contribution, rate, inflation]
   );
 
-  const webDefaults = deterministicScreen.platformVariants?.web?.sliderDefaults;
+  const handleFieldChange = useCallback(
+    (fieldId: string, nextValue: number | string) => {
+      const numericValue = typeof nextValue === "string" ? Number(nextValue) : nextValue;
+      switch (fieldId) {
+        case "age":
+          setAge(Number(numericValue));
+          break;
+        case "retirementAge":
+          setRetireAge(Number(numericValue));
+          break;
+        case "currentBalance":
+          setBalance(Number(numericValue));
+          break;
+        case "contribution":
+          setContribution(Number(numericValue));
+          break;
+        case "expectedReturn":
+          setRate(Number(numericValue));
+          break;
+        case "inflation":
+          setInflation(Number(numericValue));
+          break;
+        default:
+          break;
+      }
+    },
+    [setAge, setRetireAge, setBalance, setContribution, setRate, setInflation]
+  );
   const submitLabel = deterministicScreen.submitButtonLabel ?? "Calculate";
   const whatIfButton = deterministicScreen.buttons?.find((btn) => btn.id === "whatif");
 
@@ -277,38 +152,47 @@ export const DeterministicForm: React.FC<DeterministicFormProps> = ({
 
             <SectionWrapper>
               {section.fields.map((fieldId) => {
-                const binding = bindings[fieldId];
-                if (!binding) {
-                  return null;
-                }
-
                 const fieldDef = getFieldDefinition(fieldId);
-                const isCurrencyField = fieldDef.id === "currentBalance";
-                const key = `${section.id}-${fieldDef.id}`;
+                const value = (() => {
+                  switch (fieldDef.id) {
+                    case "age":
+                      return age;
+                    case "retirementAge":
+                      return retireAge;
+                    case "currentBalance":
+                      return balance;
+                    case "contribution":
+                      return contribution;
+                    case "expectedReturn":
+                      return rate;
+                    case "inflation":
+                      return inflation;
+                    default:
+                      return 0;
+                  }
+                })();
 
-                if (fieldDef.type === "slider") {
-                  const slider = renderSliderField(fieldDef, binding, {
-                    age,
-                    webDefaults,
-                  });
-                  if (!slider) return null;
+                const control = (
+                  <SchemaFieldControl
+                    field={fieldDef}
+                    value={value}
+                    onChange={(next) => handleFieldChange(fieldDef.id, next)}
+                    formState={formState}
+                  />
+                );
 
-                  return layout === "horizontal" ? (
-                    <Grid item xs={12} key={key}>
-                      {slider}
+                if (layout === "horizontal") {
+                  return (
+                    <Grid item xs={12} sm={6} key={`${section.id}-${fieldDef.id}`}>
+                      {control}
                     </Grid>
-                  ) : (
-                    <Box key={key}>{slider}</Box>
                   );
                 }
 
-                const fieldNode = renderTextField(fieldDef, binding, isCurrencyField ? "currency" : undefined);
-                return layout === "horizontal" ? (
-                  <Grid item xs={12} sm={6} key={key}>
-                    {fieldNode}
-                  </Grid>
-                ) : (
-                  <Box key={key}>{fieldNode}</Box>
+                return (
+                  <Box key={`${section.id}-${fieldDef.id}`}>
+                    {control}
+                  </Box>
                 );
               })}
             </SectionWrapper>

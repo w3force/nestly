@@ -64,7 +64,7 @@ export default function BottomTabNavigator() {
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="calculator" color={color} size={size} />
           ),
-          title: 'Retirement Calculator',
+          headerShown: false,
         }}
       />
       <Tab.Screen
@@ -75,7 +75,7 @@ export default function BottomTabNavigator() {
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="chart-line-variant" color={color} size={size} />
           ),
-          title: 'What-If Scenarios',
+          headerShown: false,
         }}
       />
       <Tab.Screen
@@ -86,7 +86,7 @@ export default function BottomTabNavigator() {
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="account-outline" color={color} size={size} />
           ),
-          title: 'My Profile',
+          headerShown: false,
         }}
       />
     </Tab.Navigator>

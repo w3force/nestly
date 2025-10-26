@@ -21,15 +21,25 @@ import {
 } from '@projection/shared';
 import { SliderWithInfo } from './SliderWithInfo';
 import { HelpIcon } from './HelpIcon';
+import { helpContent } from '../lib/helpContent';
+
+interface ScenarioGroup {
+  id: string;
+  title?: string;
+  description?: string;
+  fields: InputFieldDefinition[];
+}
 
 interface ScenarioCardProps {
   scenario: WhatIfScenario;
   fields: InputFieldDefinition[];
+  groups?: ScenarioGroup[];
   onUpdate: (updates: Partial<WhatIfScenario>) => void;
   onDelete?: () => void;
   onClone?: () => void;
   isBaseline?: boolean;
   difference?: number;
+  isActive?: boolean;
 }
 
 const formatNumber = (value: number, decimalPlaces?: number) => {
@@ -42,20 +52,59 @@ const formatNumber = (value: number, decimalPlaces?: number) => {
 export function ScenarioCard({
   scenario,
   fields,
+  groups,
   onUpdate,
   onDelete,
   onClone,
   isBaseline = false,
   difference,
+  isActive = false,
 }: ScenarioCardProps) {
   const theme = useTheme();
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(scenario.name);
 
+  const fieldMap = useMemo(() => {
+    const map = new Map<string, InputFieldDefinition>();
+    fields.forEach((field) => {
+      map.set(field.id, field);
+    });
+    return map;
+  }, [fields]);
+
+  const resolveHelpTopic = useCallback((field: InputFieldDefinition) => {
+    const rawKey = field.helpTopicId?.replace(/_help$/, '');
+    if (!rawKey) {
+      return undefined;
+    }
+
+    const calculatorTopics = helpContent.calculator as Record<string, { title: string; description: string }>;
+    const remap: Record<string, string> = {
+      age: 'currentAge',
+      current_balance: 'currentBalance',
+      annual_contribution: 'annualContribution',
+      contribution_rate: 'contributionRate',
+      expected_return: 'expectedReturn',
+      inflation: 'inflation',
+    };
+
+    const normalizedKey = rawKey.replace(/_([a-z])/g, (_, char: string) => char.toUpperCase());
+    const candidateKeys = [rawKey, normalizedKey, remap[rawKey]];
+    for (const key of candidateKeys) {
+      if (key && calculatorTopics[key]) {
+        return calculatorTopics[key];
+      }
+    }
+    return undefined;
+  }, []);
+
   const formState = useMemo(
     () => ({
       ...scenario,
       savingsRate: scenario.savingsRate ?? scenario.contribution ?? 0,
+      targetAge: scenario.targetAge,
+      income: scenario.income,
+      targetIncome: scenario.targetIncome,
     }),
     [scenario],
   );
@@ -91,6 +140,15 @@ export function ScenarioCard({
         case 'currentSavings':
           onUpdate({ currentSavings: Number(value) });
           break;
+        case 'income':
+          onUpdate({ income: Number(value) });
+          break;
+        case 'targetAge':
+          onUpdate({ targetAge: Number(value) });
+          break;
+        case 'targetIncome':
+          onUpdate({ targetIncome: Number(value) });
+          break;
         default:
           break;
       }
@@ -108,6 +166,8 @@ export function ScenarioCard({
         ? scenario.inflation
         : field.id === 'age'
         ? scenario.age
+        : field.id === 'targetAge'
+        ? scenario.targetAge
         : 0;
 
     const metadata = getSliderMetadata(field);
@@ -146,19 +206,19 @@ export function ScenarioCard({
         : undefined;
 
     const milestoneThreshold = Math.max(step * 1.2, 0.25);
+    const accessory = field.helpTopicId ? (
+      <HelpIcon
+        topicId={field.helpTopicId}
+        helpTopic={resolveHelpTopic(field) as any}
+        size={18}
+      />
+    ) : undefined;
 
     return (
       <View key={field.id} style={styles.sliderSection}>
-        <View style={styles.sliderHeader}>
-          <View style={styles.labelWithHelp}>
-            <Text variant="bodyMedium" style={styles.label}>
-              {field.label}
-            </Text>
-            {field.helpTopicId && <HelpIcon topicId={field.helpTopicId} size={18} />}
-          </View>
-        </View>
         <SliderWithInfo
           title={field.label}
+          titleAccessory={accessory}
           value={value}
           min={field.constraints.min}
           max={
@@ -225,13 +285,30 @@ export function ScenarioCard({
           </View>
         );
       case 'currentSavings':
+      case 'income':
+      case 'targetIncome':
         return (
           <View key={field.id} style={styles.inputSection}>
-            <Text variant="bodyMedium" style={styles.label}>
-              {field.label}
-            </Text>
+            <View style={styles.labelWithHelp}>
+              <Text variant="bodyMedium" style={styles.label}>
+                {field.label}
+              </Text>
+              {field.helpTopicId && (
+                <HelpIcon
+                  topicId={field.helpTopicId}
+                  helpTopic={resolveHelpTopic(field) as any}
+                  size={18}
+                />
+              )}
+            </View>
             <TextInput
-              value={String(scenario.currentSavings)}
+              value={String(
+                field.id === 'currentSavings'
+                  ? scenario.currentSavings
+                  : field.id === 'income'
+                  ? scenario.income
+                  : scenario.targetIncome,
+              )}
               onChangeText={(text) => {
                 const numeric = parseFloat(text.replace(/[^0-9.]/g, '')) || 0;
                 handleFieldUpdate(field.id, numeric);
@@ -248,14 +325,41 @@ export function ScenarioCard({
       case 'savingsRate':
       case 'expectedReturn':
       case 'inflation':
+      case 'targetAge':
         return renderSliderField(field);
       default:
         return null;
     }
   };
 
+  const renderGroupedFields = () => {
+    if (!groups || groups.length === 0) {
+      return fields
+        .filter((field) => field.id !== 'scenarioName')
+        .map(renderField);
+    }
+
+    return groups.map((group) => (
+      <View key={group.id} style={styles.groupSection}>
+        {group.title ? (
+          <Text variant="titleSmall" style={styles.groupTitle}>
+            {group.title}
+          </Text>
+        ) : null}
+        {group.description ? (
+          <Text variant="bodySmall" style={styles.groupDescription}>
+            {group.description}
+          </Text>
+        ) : null}
+        {group.fields
+          .filter((field) => field.id !== 'scenarioName')
+          .map((field) => renderField(field))}
+      </View>
+    ));
+  };
+
   return (
-    <Card style={styles.card} elevation={2}>
+    <Card style={[styles.card, isActive && styles.activeCard]} elevation={isActive ? 4 : 2}>
       <Card.Content>
         <View style={styles.header}>
           {renderField(fields.find((f) => f.id === 'scenarioName')!)}
@@ -266,6 +370,10 @@ export function ScenarioCard({
                 color: difference >= 0 ? '#69B47A' : '#FF6B6B',
                 fontWeight: '600',
               }}
+              style={{
+                backgroundColor:
+                  difference >= 0 ? 'rgba(105, 180, 122, 0.12)' : 'rgba(255, 107, 107, 0.12)',
+              }}
             >
               {difference >= 0 ? '+' : ''}
               {formatCurrency(difference)}
@@ -275,9 +383,7 @@ export function ScenarioCard({
 
         <Divider style={styles.divider} />
 
-        {fields
-          .filter((field) => field.id !== 'scenarioName')
-          .map(renderField)}
+        {renderGroupedFields()}
 
         {!isBaseline && (
           <View style={styles.actions}>
@@ -313,7 +419,13 @@ export function ScenarioCard({
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: 8,
+    marginBottom: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+  },
+  activeCard: {
+    borderWidth: 2,
+    borderColor: '#4ABDAD',
   },
   header: {
     flexDirection: 'row',
@@ -342,16 +454,10 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   divider: {
-    marginVertical: 12,
+    marginVertical: 8,
   },
   sliderSection: {
-    marginBottom: 20,
-  },
-  sliderHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 16,
   },
   labelWithHelp: {
     flexDirection: 'row',
@@ -362,16 +468,28 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   inputSection: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   savingsInput: {
     marginTop: 8,
     backgroundColor: '#fff',
   },
+  groupSection: {
+    marginBottom: 16,
+    gap: 8,
+  },
+  groupTitle: {
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  groupDescription: {
+    color: '#4F5D57',
+    marginBottom: 8,
+  },
   actions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    marginTop: 8,
+    marginTop: 4,
     gap: 8,
   },
   actionButton: {

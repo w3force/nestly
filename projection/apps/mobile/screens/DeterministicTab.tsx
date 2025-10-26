@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import { ScrollView, View, StyleSheet } from "react-native";
+import { ScrollView, View, StyleSheet, SafeAreaView, Animated } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   Button,
   Card,
@@ -18,6 +19,8 @@ import { SliderWithInfo } from "../components/SliderWithInfo";
 import { CompactInputField } from "../components/CompactInputField";
 import { SectionHeader } from "../components/SectionHeader";
 import { ResultsSummary } from "../components/ResultsSummary";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import {
   getFieldDefinition,
   getScreenDefinition,
@@ -32,6 +35,9 @@ import {
 
 const chartAxisTextStyle = { fontSize: 10, fill: COLORS.textSecondary };
 const deterministicStrokeStyle = { stroke: COLORS.secondary, strokeWidth: 2 };
+const PAGE_ICON_NAME = "calculator-variant";
+
+const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
 const deterministicScreen: ScreenDefinition = getScreenDefinition("deterministic");
 const expectedReturnFieldDefinition = getFieldDefinition("expectedReturn");
@@ -56,10 +62,6 @@ const formatYAxisLabel = (value: number) => {
   return `$${value}`;
 };
 
-const formatXAxisLabel = (value: number, index: number, values: any[]) => {
-  return `${value}`;
-};
-
 function formatCurrency(value: number | undefined): string {
   if (value == null || Number.isNaN(value)) {
     return "—";
@@ -80,22 +82,94 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  safeArea: {
+    flex: 1,
+  },
+  collapsedHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingBottom: 10,
+    paddingHorizontal: SPACING.lg,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(48, 64, 58, 0.08)',
+    backgroundColor: '#F2FBF5',
+    zIndex: 20,
+  },
+  collapsedHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+  },
+  collapsedHeaderIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(105, 180, 122, 0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  collapsedHeaderTitle: {
+    fontWeight: '700',
+    fontSize: 18,
+    color: '#264336',
+  },
+  brandHeader: {
+    borderRadius: BORDER_RADIUS.xl,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.lg,
+    marginBottom: SPACING.lg,
+  },
+  brandHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+  brandIconBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(105, 180, 122, 0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(74, 189, 172, 0.25)',
+  },
+  brandTitle: {
+    fontWeight: '700',
+    color: '#264336',
+  },
+  brandSubtitle: {
+    color: '#3F6B59',
+  },
   content: {
     padding: SPACING.lg,
     gap: SPACING.sm,
-    paddingBottom: 120,
+    paddingBottom: 160,
+    backgroundColor: '#F2FBF5',
   },
   card: {
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.lg,
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: BORDER_RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   },
   inputSpacing: {
     marginBottom: SPACING.md,
   },
   sectionContainer: {
-    marginBottom: SPACING.xl,
+    marginBottom: SPACING.lg,
   },
   fieldWrapper: {
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.sm,
   },
   resultText: {
     marginTop: SPACING.lg,
@@ -106,9 +180,9 @@ const styles = StyleSheet.create({
     marginTop: SPACING.lg,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.lg,
-    backgroundColor: COLORS.resultHighlight,
+    backgroundColor: '#EAF8F0',
     borderLeftWidth: 4,
-    borderLeftColor: COLORS.resultBorder,
+    borderLeftColor: COLORS.secondary,
     borderRadius: BORDER_RADIUS.sm,
   },
   finalResultTitle: {
@@ -233,6 +307,26 @@ const DeterministicTab: React.FC = () => {
   const route = useRoute();
   const { input, setInput, result, setResult, loading, setLoading } = useProjectionStore();
   const { baseline, setBaseline } = useDeterministicBaseline();
+  const insets = useSafeAreaInsets();
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const headerOpacity = useMemo(
+    () =>
+      scrollY.interpolate({
+        inputRange: [40, 120],
+        outputRange: [0, 1],
+        extrapolate: 'clamp',
+      }),
+    [scrollY]
+  );
+  const headerTranslate = useMemo(
+    () =>
+      scrollY.interpolate({
+        inputRange: [0, 120],
+        outputRange: [-16, 0],
+        extrapolate: 'clamp',
+      }),
+    [scrollY]
+  );
 
   const [age, setAge] = useState(input?.age ?? 30);
   const [retireAge, setRetireAge] = useState(input?.retireAge ?? 65);
@@ -266,6 +360,27 @@ const DeterministicTab: React.FC = () => {
       inflation,
     }),
     [age, retireAge, balance, contribution, rate, inflation],
+  );
+
+  const xAxisFormatter = useCallback(
+    (_value: number, index: number) => {
+      if (!result) {
+        return '';
+      }
+      const totalPoints = result.nominalBalances.length;
+      if (totalPoints === 0) {
+        return '';
+      }
+      const labelAge = age + index;
+      const step = Math.max(1, Math.round(totalPoints / 6));
+      const isFirst = index === 0;
+      const isLast = index === totalPoints - 1;
+      if (isFirst || isLast || index % step === 0) {
+        return `${labelAge}`;
+      }
+      return '';
+    },
+    [result, age],
   );
 
   // Initialize from route parameters (from Quick Start defaults)
@@ -536,7 +651,6 @@ const DeterministicTab: React.FC = () => {
       if (paramsChanged) {
         try {
           const years = retireAge - age;
-          console.log("Auto-recalculating with inflation:", inflation); // Debug log
           const calculationResult = simulateDeterministic({
             initialBalance: balance,
             annualContribution: contribution,
@@ -544,7 +658,6 @@ const DeterministicTab: React.FC = () => {
             annualReturn: rate / 100,
             inflation: inflation / 100,
           });
-          console.log("New result with inflation", inflation, ":", calculationResult); // Debug log
           setResult(calculationResult);
           // Update the ref to the new values
           lastSubmittedRef.current = {
@@ -573,12 +686,69 @@ const DeterministicTab: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <ScrollView 
-        style={{ flex: 1, backgroundColor: theme.colors.background }}
-        contentContainerStyle={styles.content}
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: '#F2FBF5' }]}> 
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.collapsedHeader,
+          {
+            paddingTop: insets.top,
+            opacity: headerOpacity,
+            transform: [{ translateY: headerTranslate }],
+          },
+        ]}
       >
-      <Card style={styles.card}>
+        <View style={styles.collapsedHeaderContent}>
+          <View style={styles.collapsedHeaderIcon}>
+            <MaterialCommunityIcons
+              name={PAGE_ICON_NAME}
+              size={18}
+              color="#264336"
+            />
+          </View>
+          <Text variant="titleMedium" style={styles.collapsedHeaderTitle}>
+            Deterministic Calculator
+          </Text>
+        </View>
+      </Animated.View>
+      <AnimatedScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: SPACING.lg + insets.top },
+        ]}
+        scrollEventThrottle={16}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}
+      >
+        <LinearGradient
+          colors={["#E9F7EF", "#D9F1E6"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.brandHeader}
+        >
+          <View style={styles.brandHeaderContent}>
+            <View style={styles.brandIconBadge}>
+              <MaterialCommunityIcons
+                name={PAGE_ICON_NAME}
+                size={26}
+                color="#2E7D32"
+              />
+            </View>
+            <View>
+              <Text variant="titleLarge" style={styles.brandTitle}>
+                Nestly Planner
+              </Text>
+              <Text variant="bodySmall" style={styles.brandSubtitle}>
+                Deterministic Calculator
+              </Text>
+            </View>
+          </View>
+        </LinearGradient>
+
+        <Card style={styles.card}>
         <Card.Title 
           title="401(k) Calculator" 
           subtitle="Deterministic projection"
@@ -676,7 +846,8 @@ const DeterministicTab: React.FC = () => {
                     style={{ marginTop: 8 }}
                     data={result.nominalBalances}
                     scale={scale.scaleLinear}
-                    formatLabel={formatXAxisLabel}
+                    numberOfTicks={Math.min(6, result.nominalBalances.length)}
+                    formatLabel={xAxisFormatter}
                     contentInset={{ left: 10, right: 10 }}
                     svg={chartAxisTextStyle}
                   />
@@ -696,7 +867,7 @@ const DeterministicTab: React.FC = () => {
           </Card>
         </>
       )}
-      </ScrollView>
+    </AnimatedScrollView>
       <Snackbar
         visible={snackbar.visible}
         onDismiss={() => setSnackbar({ visible: false, message: '' })}
@@ -704,7 +875,7 @@ const DeterministicTab: React.FC = () => {
       >
         {snackbar.message}
       </Snackbar>
-    </View>
+    </SafeAreaView>
   );
 };
 

@@ -22,6 +22,11 @@ const fadeIn = {
   transition: { duration: 0.8, ease: "easeOut" as const, delay: 0.2 },
 } as const;
 
+const HERO_ICON_SOURCE_MAP: Record<string, string> = {
+  "nestly-default": "/icon-192x192.png",
+  favicon: "/favicon-96x96.png",
+};
+
 export default function Home() {
   const router = useRouter();
   const [isGuestMode, setIsGuestMode] = useState(false);
@@ -35,6 +40,14 @@ export default function Home() {
   const featuresSection =
     LANDING_SCREEN.sections.find((section) => section.id === "features") ?? LANDING_SCREEN.sections[1];
   const heroMetadata = heroSection.metadata as any;
+  const heroIconKey =
+    typeof heroMetadata?.heroIcon === "string" && heroMetadata.heroIcon.trim().length > 0
+      ? heroMetadata.heroIcon.trim()
+      : undefined;
+  const heroIconSrc =
+    heroIconKey && heroIconKey.startsWith("/")
+      ? heroIconKey
+      : HERO_ICON_SOURCE_MAP[heroIconKey ?? ""] ?? "/icon-192x192.png";
   const featureItems = (featuresSection.metadata?.items || []) as Array<{
     id: string;
     title: string;
@@ -84,10 +97,37 @@ export default function Home() {
           pb: 10,
         }}
       >
-        <Container maxWidth="lg" sx={{ py: { xs: 4, md: 6 } }}>
-          <Stack spacing={{ xs: 5, md: 7 }} alignItems="center">
+        <Container maxWidth="lg" sx={{ py: { xs: 3.5, md: 5 } }}>
+          <Stack spacing={{ xs: 4.2, md: 6 }} alignItems="center">
             {/* Hero Section */}
-            <Stack spacing={{ xs: 4, md: 5 }} alignItems="center" textAlign="center">
+            <Stack spacing={{ xs: 3, md: 4 }} alignItems="center" textAlign="center">
+              <motion.div
+                initial={fadeInUp.initial}
+                animate={fadeInUp.animate}
+                transition={{ ...fadeInUp.transition, delay: 0 }}
+              >
+                <Box
+                  sx={{
+                    mb: { xs: 1.25, md: 1.75 },
+                    p: 1.8,
+                    borderRadius: "999px",
+                    background: "linear-gradient(135deg, rgba(74, 189, 172, 0.08) 0%, rgba(105, 180, 122, 0.14) 100%)",
+                    boxShadow: "0 16px 36px rgba(74, 189, 172, 0.24)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "1px solid rgba(74, 189, 172, 0.18)",
+                  }}
+                >
+                  <Box
+                    component="img"
+                    src={heroIconSrc}
+                    alt="Nestly icon"
+                    sx={{ width: { xs: 48, md: 60 }, height: { xs: 48, md: 60 }, borderRadius: "16px" }}
+                  />
+                </Box>
+              </motion.div>
+
               <motion.div
                 initial={fadeInUp.initial}
                 animate={fadeInUp.animate}
@@ -133,8 +173,8 @@ export default function Home() {
                   sx={{
                     maxWidth: "48ch",
                     color: "rgba(48, 64, 58, 0.8)",
-                    fontSize: { xs: "1rem", md: "1.15rem" },
-                    lineHeight: 1.7,
+                    fontSize: { xs: "0.98rem", md: "1.12rem" },
+                    lineHeight: 1.6,
                   }}
                 >
                   {heroMetadata.heroDescription}
@@ -156,6 +196,7 @@ export default function Home() {
                   </Typography>
                 </Box>
               )}
+
             </Stack>
 
             {/* CTA Button */}
@@ -188,7 +229,10 @@ export default function Home() {
             </motion.div>
 
             {/* ★ QUICK START SECTION - Get Results in 8 Seconds ★ */}
-            <QuickStartSection />
+            <QuickStartSection
+              badgeLabel="Free Forever"
+              badgeDescription="We never send personal data to servers — calculations run entirely on your device."
+            />
 
             {/* Feature Cards - Using Schema */}
             <motion.div

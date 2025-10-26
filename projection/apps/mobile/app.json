@@ -5,13 +5,13 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "entryPoint": "./index.js",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/icon3.png",
     "scheme": "nestly",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/icon.png",
+      "image": "./assets/icon3.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#4ABDAC"
     },
     "updates": {
       "fallbackToCacheTimeout": 0
@@ -19,17 +19,17 @@
     "assetBundlePatterns": [
       "**/*"
     ],
-    "ios": {
+    "ios": {  
       "supportsTablet": true,
-      "bundleIdentifier": "com.example.nestly",
-      "icon": "./assets/icon.png"
+      "bundleIdentifier": "com.w3force.nestly",
+      "icon": "./assets/icon3.png"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/icon3.png",
+        "backgroundColor": "#4ABDAC"
       },
-      "package": "com.example.nestly"
+      "package": "com.w3force.nestly"
     },
     "web": {
       "favicon": "./assets/favicon.png",

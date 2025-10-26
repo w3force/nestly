@@ -78,6 +78,8 @@ interface QuickStartSectionProps {
   onNavigateToCalculator?: () => void;
   ctaLabel?: string;
   footnote?: string;
+  badgeLabel?: string;
+  badgeDescription?: string;
   readinessMessages?: QuickStartReadinessMessages;
   inputLabels?: QuickStartInputMetadata;
   strategyMetadata?: QuickStartStrategyMetadata;
@@ -98,6 +100,8 @@ export function QuickStartSection({
   onNavigateToCalculator,
   ctaLabel,
   footnote,
+  badgeLabel,
+  badgeDescription,
   readinessMessages,
   inputLabels,
   strategyMetadata,
@@ -151,6 +155,8 @@ export function QuickStartSection({
     footnote ??
     "📊 These are estimates based on historical market averages.\nActual results will vary based on market conditions and personal circumstances.";
   const footnoteLines = footnoteCopy.split("\n");
+  const badgeLabelCopy = badgeLabel;
+  const badgeDescriptionCopy = badgeDescription;
 
   const handleNavigateToCalculator = () => {
     if (!result) return;
@@ -221,9 +227,10 @@ export function QuickStartSection({
     <Box
       sx={{
         backgroundColor: "rgba(105, 180, 122, 0.08)",
-        py: { xs: 6, md: 8 },
+        py: { xs: 4.5, md: 6 },
         borderTop: "1px solid rgba(0,0,0,0.06)",
         borderBottom: "1px solid rgba(0,0,0,0.06)",
+        mt: { xs: -3, md: -4 },
       }}
     >
       <Container maxWidth="lg">
@@ -233,15 +240,19 @@ export function QuickStartSection({
           transition={{ ...fadeInUp.transition, delay: 0 }}
           viewport={{ once: true, margin: "-100px" }}
         >
-          <Stack spacing={{ xs: 4, md: 5 }}>
+          <Stack spacing={{ xs: 3.5, md: 4.5 }}>
             {/* Header */}
-            <Stack spacing={1} alignItems="center" textAlign="center">
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1, justifyContent: "center" }}>
-                <LightbulbIcon sx={{ color: "#4ABDAC", fontSize: 28 }} />
-                <Typography variant="overline" sx={{ color: "#4ABDAC", fontWeight: 600 }}>
-                  {title}
-                </Typography>
-              </Box>
+            <Stack spacing={0.75} alignItems="center" textAlign="center">
+              <Typography
+                variant="overline"
+                sx={{
+                  color: "#4ABDAC",
+                  fontWeight: 700,
+                  letterSpacing: "0.3rem",
+                }}
+              >
+                {title}
+              </Typography>
               <Typography
                 variant="h4"
                 sx={{
@@ -256,6 +267,38 @@ export function QuickStartSection({
                 {description}
               </Typography>
             </Stack>
+
+            {(badgeLabelCopy || badgeDescriptionCopy) && (
+              <Stack spacing={1.2} alignItems="center" textAlign="center">
+                {badgeLabelCopy ? (
+                  <Chip
+                    label={badgeLabelCopy}
+                    size="medium"
+                    sx={{
+                      borderRadius: 999,
+                      fontWeight: 600,
+                      px: 1.5,
+                      backgroundColor: "rgba(74, 189, 172, 0.12)",
+                      color: "#2FBAA0",
+                      border: "1px solid rgba(74, 189, 172, 0.35)",
+                      letterSpacing: "0.05em",
+                    }}
+                  />
+                ) : null}
+                {badgeDescriptionCopy ? (
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "rgba(48, 64, 58, 0.7)",
+                      maxWidth: "46ch",
+                      fontWeight: 500,
+                    }}
+                  >
+                    {badgeDescriptionCopy}
+                  </Typography>
+                ) : null}
+              </Stack>
+            )}
 
             {/* Input & Results Grid */}
             <Grid container spacing={3}>

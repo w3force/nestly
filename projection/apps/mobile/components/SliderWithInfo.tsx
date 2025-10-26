@@ -46,13 +46,13 @@ interface SliderWithInfoProps {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 20,
+    marginBottom: 14,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   titleSection: {
     flexDirection: 'row',
@@ -77,18 +77,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   sliderContainer: {
-    height: 50,
+    height: 44,
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   slider: {
     width: '100%',
-    height: 40,
+    height: 36,
   },
   rangeIndicatorsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   rangeIndicator: {
     alignItems: 'center',
@@ -101,11 +101,11 @@ const styles = StyleSheet.create({
   // Info box wrapper - allows absolute positioning of milestone overlay
   infoBoxWrapper: {
     position: 'relative',
-    minHeight: 68, // Fixed height for static content
+    minHeight: 56, // Fixed height for static content
   },
   // Fixed-height container to prevent jumping
   infoBoxContainer: {
-    minHeight: 68, // Allocate space for 2-line description + title
+    minHeight: 56, // Allocate space for 2-line description + title
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 8,
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 12,
     color: '#30403A',
-    marginBottom: 3,
+    marginBottom: 2,
   },
   milestoneDescription: {
     fontSize: 11,
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 6,
-    marginBottom: 8,
+    marginBottom: 6,
     backgroundColor: 'rgba(105, 180, 122, 0.1)',
     borderLeftWidth: 3,
     borderLeftColor: '#69B47A',
@@ -271,34 +271,35 @@ export const SliderWithInfo: React.FC<SliderWithInfoProps> = ({
         </View>
       )}
 
-      {/* Info box with milestone overlay - milestone appears on top without pushing layout */}
-      <View style={styles.infoBoxWrapper}>
-        {/* Static info box background */}
-        <View style={[styles.infoBoxContainer, infoBox ? { backgroundColor: infoBox.backgroundColor } : {}]} />
+      {(infoBox || milestones.length > 0) && (
+        <View style={styles.infoBoxWrapper}>
+          {/* Static info box background */}
+          <View style={[styles.infoBoxContainer, infoBox ? { backgroundColor: infoBox.backgroundColor } : {}]} />
 
-        {/* Static info - fades out when milestone appears */}
-        <Animated.View style={[
-          styles.staticInfoContent,
-          infoBox ? { backgroundColor: infoBox.backgroundColor } : {},
-          { opacity: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }
-        ]}>
-          {infoBox && (
-            <>
-              <Text style={styles.infoBoxTitle}>{infoBox.title}</Text>
-              <Text style={styles.infoBoxDescription}>{infoBox.description}</Text>
-            </>
-          )}
-        </Animated.View>
+          {/* Static info - fades out when milestone appears */}
+          <Animated.View style={[
+            styles.staticInfoContent,
+            infoBox ? { backgroundColor: infoBox.backgroundColor } : {},
+            { opacity: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }
+          ]}>
+            {infoBox && (
+              <>
+                <Text style={styles.infoBoxTitle}>{infoBox.title}</Text>
+                <Text style={styles.infoBoxDescription}>{infoBox.description}</Text>
+              </>
+            )}
+          </Animated.View>
 
-        {/* Milestone overlay - fades in when milestone is active */}
-        <Animated.View style={[
-          styles.milestoneInfoContainer,
-          { opacity: fadeAnim }
-        ]}>
-          <Text style={styles.milestoneLabel}>{closestMilestone?.label}</Text>
-          <Text style={styles.milestoneDescription}>{closestMilestone?.description}</Text>
-        </Animated.View>
-      </View>
+          {/* Milestone overlay - fades in when milestone is active */}
+          <Animated.View style={[
+            styles.milestoneInfoContainer,
+            { opacity: fadeAnim }
+          ]}>
+            <Text style={styles.milestoneLabel}>{closestMilestone?.label}</Text>
+            <Text style={styles.milestoneDescription}>{closestMilestone?.description}</Text>
+          </Animated.View>
+        </View>
+      )}
     </View>
   );
 };

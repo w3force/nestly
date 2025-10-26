@@ -16,6 +16,9 @@ export interface WhatIfScenario {
   returnRate: number;          // Expected annual return % (0-15)
   inflation: number;           // Expected inflation % (0-10)
   currentSavings: number;      // Current balance in dollars
+  income: number;              // Annual income used to derive savings rate
+  targetAge: number;           // Desired retirement age
+  targetIncome: number;        // Desired annual retirement income
 }
 
 export interface ProjectionPoint {
@@ -46,6 +49,9 @@ export const DEFAULT_BASELINE: WhatIfScenario = {
   returnRate: 7,
   inflation: 3,
   currentSavings: 50000,
+  income: 100000,
+  targetAge: 65,
+  targetIncome: 70000,
 };
 
 export const DEFAULT_WHATIF: WhatIfScenario = {
@@ -57,6 +63,9 @@ export const DEFAULT_WHATIF: WhatIfScenario = {
   returnRate: 8,
   inflation: 3,
   currentSavings: 50000,
+  income: 110000,
+  targetAge: 63,
+  targetIncome: 80000,
 };
 
 // Helper to create new scenario
@@ -70,6 +79,9 @@ export function createScenario(index: number): WhatIfScenario {
     returnRate: 7,
     inflation: 3,
     currentSavings: 50000,
+    income: 100000,
+    targetAge: 65,
+    targetIncome: 70000,
   };
 }
 

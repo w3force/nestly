@@ -209,20 +209,20 @@ export const WHATIF_SCREEN: ScreenDefinition = {
       id: 'baseline',
       title: 'Baseline Scenario',
       description: 'Your default assumptions',
-      fields: ['scenarioName', 'age', 'savingsRate', 'expectedReturn', 'inflation', 'currentSavings'],
+      fields: ['scenarioName', 'age', 'currentSavings', 'savingsRate', 'income', 'expectedReturn', 'inflation', 'targetAge', 'targetIncome'],
       layout: 'vertical',
       collapsible: true,
       defaultCollapsed: false,
       metadata: {
         scenarioType: 'baseline',
-        scenarioFields: ['scenarioName', 'age', 'savingsRate', 'expectedReturn', 'inflation', 'currentSavings'],
+        scenarioFields: ['scenarioName', 'age', 'currentSavings', 'savingsRate', 'income', 'expectedReturn', 'inflation', 'targetAge', 'targetIncome'],
       },
     },
     {
       id: 'scenarios',
       title: 'Alternative Scenarios',
       description: 'Create and compare different what-if scenarios',
-      fields: ['scenarioName', 'age', 'savingsRate', 'expectedReturn', 'inflation', 'currentSavings'],
+      fields: ['scenarioName', 'age', 'currentSavings', 'savingsRate', 'income', 'expectedReturn', 'inflation', 'targetAge', 'targetIncome'],
       layout: 'vertical',
       metadata: {
         dynamicContent: true,
@@ -267,6 +267,32 @@ export const WHATIF_SCREEN: ScreenDefinition = {
   metadata: {
     description_long: 'Build and compare multiple retirement scenarios to understand the impact of different assumptions.',
     helpCategory: 'what-if-analysis',
+    scenarioGroups: [
+      {
+        id: 'personalInfo',
+        title: 'Personal Info',
+        description: 'Key information about you today',
+        fields: ['scenarioName', 'age', 'currentSavings'],
+      },
+      {
+        id: 'contributions',
+        title: 'Contributions',
+        description: 'How much you plan to save each year',
+        fields: ['savingsRate', 'income'],
+      },
+      {
+        id: 'assumptions',
+        title: 'Market Assumptions',
+        description: 'Expected growth and inflation',
+        fields: ['expectedReturn', 'inflation'],
+      },
+      {
+        id: 'retirementGoal',
+        title: 'Retirement Goal',
+        description: 'Target age and income in retirement',
+        fields: ['targetAge', 'targetIncome'],
+      },
+    ],
   },
 };
 
@@ -360,12 +386,14 @@ export const LANDING_SCREEN: ScreenDefinition = {
         type: 'hero',
         description: 'Welcome message and value proposition',
         heroTitle: 'Nestly',
+        heroIcon: 'nestly-default',
         heroTagline: 'Watch your future grow, one nest at a time.',
         heroDescription: 'Nestly helps you project your savings, 401(k), Social Security, Medicare costs, and investments over time — guiding you to build a secure financial future.',
         guestWelcome: '👋 Welcome, Guest! Explore Nestly with limited features.',
         primaryCTA: 'Start Planning Now',
         secondaryCTA: 'Sign In / Create Account',
         secondaryLink: '/auth',
+        footerNote: 'Free forever • No credit card required',
       },
     },
     {
@@ -460,9 +488,9 @@ export const LANDING_SCREEN: ScreenDefinition = {
             title: 'Monte Carlo',
             description:
               'Run 10,000+ simulations to see the probability of retirement success. Get a realistic range of outcomes with best, median, and worst-case scenarios.',
-            cta: 'Run Simulations',
-            navigateTo: 'monteCarlo',
-            badge: 'PREMIUM',
+            cta: 'Coming Soon',
+            badge: 'COMING SOON',
+            status: 'comingSoon',
           },
         ],
       },

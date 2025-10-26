@@ -22,6 +22,7 @@ import {
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import StarIcon from "@mui/icons-material/Star";
+import AccountCircleRoundedIcon from "@mui/icons-material/AccountCircleRounded";
 import { useUser } from "../contexts/UserContext";
 import { PlansComparison } from "./PlansComparison";
 
@@ -51,14 +52,30 @@ export function ProfileContent() {
           <Stack spacing={4}>
             {/* Header */}
             <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <Box>
-                <Typography variant="h4" fontWeight={700} color="#30403A">
-                  My Profile
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                  Manage your account and saved scenarios
-                </Typography>
-              </Box>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Box
+                  sx={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: 2,
+                    background: "linear-gradient(135deg, rgba(73, 101, 210, 0.16) 0%, rgba(104, 132, 236, 0.28) 100%)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "1px solid rgba(73, 101, 210, 0.2)",
+                  }}
+                >
+                  <AccountCircleRoundedIcon sx={{ fontSize: 30, color: "#30403A" }} />
+                </Box>
+                <Box>
+                  <Typography variant="h4" fontWeight={700} color="#30403A">
+                    My Profile
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                    Manage your account and saved scenarios
+                  </Typography>
+                </Box>
+              </Stack>
               <Chip
                 icon={user?.tier === "premium" ? <StarIcon /> : undefined}
                 label={`${user?.tier.toUpperCase()} Tier`}

@@ -66,6 +66,18 @@ const fallbackContent: Record<string, { title: string; description: string }> = 
     title: 'Inflation Rate',
     description: 'Expected annual inflation. Historical average: 2-3%. This shows what your money will be worth in today\'s dollars (real vs nominal).',
   },
+  whatif_income: {
+    title: 'Annual Income',
+    description: 'Your before-tax household income. Used to convert a savings rate (percentage) into dollar contributions each year. Include salary plus any bonuses you regularly contribute.',
+  },
+  whatif_target_age: {
+    title: 'Target Retirement Age',
+    description: 'The age you hope to retire. This determines how many years you have left to save and how long your money needs to last. Retiring later allows more time for savings to grow.',
+  },
+  whatif_target_income: {
+    title: 'Target Retirement Income',
+    description: 'How much annual income you want during retirement (in today’s dollars). This helps estimate whether your savings can support your desired lifestyle.',
+  },
   monte_carlo_sims: {
     title: 'Number of Simulations',
     description: 'How many scenarios to run. More paths = more accurate results but slower. 1,000-5,000 is typical.',

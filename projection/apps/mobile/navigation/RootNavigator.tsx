@@ -9,7 +9,6 @@ import { ActivityIndicator, View } from 'react-native';
 import LandingScreen from '../screens/LandingScreen';
 import StartScreen from '../screens/StartScreen';
 import AuthScreen from '../screens/AuthScreen';
-import PlansScreen from '../screens/PlansScreen';
 import BottomTabNavigator from './BottomTabNavigator';
 import { TierLevel } from '@projection/shared';
 import { useTier } from '../contexts/TierContext';
@@ -108,13 +107,6 @@ export default function RootNavigator() {
             name="Main"
             component={BottomTabNavigator}
             options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="Plans"
-            component={PlansScreen}
-            options={{
-              headerShown: false,
-            }}
           />
         </>
       )}

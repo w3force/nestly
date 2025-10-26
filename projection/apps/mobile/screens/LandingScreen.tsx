@@ -2,8 +2,8 @@
  * Landing Screen (Mobile)
  * Schema-driven rendering with reusable section renderers.
  */
-import React, { useMemo } from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
+import React, { useMemo, useEffect, useRef } from 'react';
+import { View, ScrollView, StyleSheet, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Button, Card, Icon, Text, useTheme } from 'react-native-paper';
 import QuickStartSection, {
@@ -22,6 +22,13 @@ interface LandingScreenProps {
 
 const landingScreen: ScreenDefinition = getScreenDefinition('landing');
 
+const HERO_ICON_MAP = {
+  'nestly-default': require('../assets/icon3.png'),
+  favicon: require('../assets/favicon.png'),
+} as const;
+
+const DEFAULT_HERO_ICON = HERO_ICON_MAP['nestly-default'];
+
 const routeMap: Record<string, string> = {
   deterministic: 'Deterministic',
   whatif: 'WhatIf',
@@ -33,42 +40,67 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 export default function LandingScreen({ onGetStarted, onNavigateTo }: LandingScreenProps) {
   const theme = useTheme();
+  const logoScale = useRef(new Animated.Value(0.85)).current;
+  const contentOpacity = useRef(new Animated.Value(0)).current;
+  const contentTranslate = useRef(new Animated.Value(12)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(logoScale, {
+        toValue: 1,
+        duration: 600,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 500,
+        delay: 120,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(contentTranslate, {
+        toValue: 0,
+        duration: 600,
+        delay: 120,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [logoScale, contentOpacity, contentTranslate]);
+
+  const heroSection = landingScreen.sections.find((section) => section.id === 'hero');
+  const heroMetadata = (heroSection?.metadata as Record<string, unknown>) ?? {};
+  const metaHeroIcon = heroMetadata['heroIcon'];
+  const heroIconKey =
+    typeof metaHeroIcon === 'string' && metaHeroIcon.trim().length > 0 ? metaHeroIcon.trim() : undefined;
+  const heroIconSource =
+    (heroIconKey && HERO_ICON_MAP[heroIconKey as keyof typeof HERO_ICON_MAP]) ?? DEFAULT_HERO_ICON;
 
   const heroRenderer = useMemo(() => {
-    const heroSection = landingScreen.sections.find((section) => section.id === 'hero');
-    const metadata = (heroSection?.metadata as Record<string, unknown>) ?? {};
-    const metaHeroTitle = metadata['heroTitle'];
+    const metaHeroTitle = heroMetadata['heroTitle'];
     const heroTitle =
       (typeof metaHeroTitle === 'string' && metaHeroTitle.trim().length > 0 ? metaHeroTitle : undefined) ??
       'Nestly';
-    const metaHeroTagline = metadata['heroTagline'];
+    const metaHeroTagline = heroMetadata['heroTagline'];
     const heroTagline =
       (typeof metaHeroTagline === 'string' && metaHeroTagline.trim().length > 0 ? metaHeroTagline : undefined) ??
       heroSection?.description ??
       landingScreen.description;
-    const metaHeroDescription = metadata['heroDescription'];
+    const metaHeroDescription = heroMetadata['heroDescription'];
     const heroDescription =
       (typeof metaHeroDescription === 'string' && metaHeroDescription.trim().length > 0
         ? metaHeroDescription
         : undefined) ??
       'Nestly helps you project your savings, 401(k), Social Security, Medicare costs, and investments over time — guiding you to build a secure financial future.';
-    const metaPrimaryCta = metadata['primaryCTA'];
+    const metaPrimaryCta = heroMetadata['primaryCTA'];
     const primaryCTA =
       (typeof metaPrimaryCta === 'string' && metaPrimaryCta.trim().length > 0 ? metaPrimaryCta : undefined) ??
       'Start Planning Now';
-    const metaSecondaryCta = metadata['secondaryCTA'];
-    const secondaryCTA = typeof metaSecondaryCta === 'string' && metaSecondaryCta.trim().length > 0
-      ? metaSecondaryCta
-      : undefined;
-
     return () => (
-      <LinearGradient
-        colors={['#E9F7EF', '#D9F1E6']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.heroSection}
-      >
-        <View style={styles.heroContent}>
+      <LinearGradient colors={['#F5F5F5', '#E8F5E9']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroSection}>
+        <Animated.View style={[styles.heroContent, { opacity: contentOpacity, transform: [{ translateY: contentTranslate }] }]}>
+          <Animated.Image source={heroIconSource} style={[styles.logoIcon, { transform: [{ scale: logoScale }] }]} />
           <Text variant="displayLarge" style={styles.heroTitle}>
             {heroTitle}
           </Text>
@@ -88,20 +120,10 @@ export default function LandingScreen({ onGetStarted, onNavigateTo }: LandingScr
           >
             {primaryCTA}
           </Button>
-          {secondaryCTA ? (
-            <Button
-              mode="outlined"
-              onPress={() => onNavigateTo?.('Auth')}
-              style={styles.secondaryButton}
-              labelStyle={styles.secondaryButtonLabel}
-            >
-              {secondaryCTA}
-            </Button>
-          ) : null}
-        </View>
+        </Animated.View>
       </LinearGradient>
     );
-  }, [onGetStarted, onNavigateTo]);
+  }, [heroMetadata, heroSection, onGetStarted, onNavigateTo, heroIconSource, contentOpacity, contentTranslate, logoScale]);
 
   const featureRenderer = useMemo<SectionRendererMap['feature-cards']>(
     () => ({ section }) => {
@@ -121,7 +143,18 @@ export default function LandingScreen({ onGetStarted, onNavigateTo }: LandingScr
           )}
 
           {items.map((item) => {
-            const isPremium = item.badge === 'PREMIUM';
+            const badgeLabel =
+              typeof item.badge === 'string' && item.badge.trim().length > 0
+                ? (item.badge as string)
+                : undefined;
+            const normalizedStatus =
+              typeof item.status === 'string' ? item.status.toLowerCase() : undefined;
+            const isComingSoon =
+              normalizedStatus === 'comingsoon' ||
+              normalizedStatus === 'coming_soon' ||
+              badgeLabel === 'COMING SOON';
+            const badgeBackground = isComingSoon ? 'rgba(48, 64, 58, 0.12)' : '#FFD54F';
+            const badgeTextColor = isComingSoon ? '#30403A' : '#1A1A1A';
             const iconName =
               item.icon ??
               (item.id === 'deterministic'
@@ -138,6 +171,9 @@ export default function LandingScreen({ onGetStarted, onNavigateTo }: LandingScr
                 : '#FFD54F');
 
             const handleNavigate = () => {
+              if (isComingSoon) {
+                return;
+              }
               const target = item.navigateTo ? routeMap[item.navigateTo] ?? item.navigateTo : undefined;
               if (target && onNavigateTo) {
                 onNavigateTo(target);
@@ -157,9 +193,11 @@ export default function LandingScreen({ onGetStarted, onNavigateTo }: LandingScr
                       <Text variant="titleMedium" style={styles.featureTitle}>
                         {item.title}
                       </Text>
-                      {isPremium && (
-                        <View style={styles.premiumBadge}>
-                          <Text style={styles.premiumText}>{item.badge}</Text>
+                      {badgeLabel && (
+                        <View style={[styles.featureBadge, { backgroundColor: badgeBackground }]}>
+                          <Text style={[styles.featureBadgeText, { color: badgeTextColor }]}>
+                            {badgeLabel}
+                          </Text>
                         </View>
                       )}
                     </View>
@@ -169,10 +207,11 @@ export default function LandingScreen({ onGetStarted, onNavigateTo }: LandingScr
                     <Button
                       mode="outlined"
                       onPress={handleNavigate}
-                      style={styles.featureCta}
-                      labelStyle={styles.featureCtaLabel}
+                      disabled={isComingSoon}
+                      style={[styles.featureCta, isComingSoon && styles.featureCtaDisabled]}
+                      labelStyle={[styles.featureCtaLabel, isComingSoon && styles.featureCtaLabelDisabled]}
                     >
-                      {item.cta ?? 'Open'}
+                      {item.cta ?? (isComingSoon ? 'Coming Soon' : 'Open')}
                     </Button>
                   </View>
                 </Card.Content>
@@ -236,7 +275,10 @@ export default function LandingScreen({ onGetStarted, onNavigateTo }: LandingScr
     [onGetStarted, onNavigateTo]
   );
 
-  const heroFooter = landingScreen.sections.find((section) => section.id === 'hero')?.metadata?.footerNote as string | undefined;
+  const heroFooter =
+    typeof heroMetadata['footerNote'] === 'string' && (heroMetadata['footerNote'] as string).trim().length > 0
+      ? (heroMetadata['footerNote'] as string)
+      : undefined;
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -260,42 +302,56 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 24,
-    gap: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+    gap: 12,
   },
   heroSection: {
-    paddingTop: 88,
-    paddingBottom: 64,
-    paddingHorizontal: 28,
+    paddingTop: 40,
+    paddingBottom: 36,
+    paddingHorizontal: 20,
     alignItems: 'center',
-    borderRadius: 24,
-    marginBottom: 16,
+    borderRadius: 28,
+    marginBottom: 12,
+    width: '100%',
+    shadowColor: '#000000',
+    shadowOpacity: 0.05,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 6,
   },
   heroContent: {
     maxWidth: 620,
     alignItems: 'center',
+    gap: 10,
+  },
+  logoIcon: {
+    width: 68,
+    height: 68,
+    marginBottom: 8,
   },
   heroTitle: {
     color: '#264336',
     fontWeight: '800',
-    marginBottom: 8,
+    fontSize: 42,
+    marginBottom: 6,
     textAlign: 'center',
   },
   heroSubtitle: {
     color: '#2FBAA0',
     fontWeight: '700',
-    marginBottom: 16,
+    marginBottom: 12,
     textAlign: 'center',
   },
   heroDescription: {
     color: 'rgba(38, 67, 54, 0.75)',
     textAlign: 'center',
-    marginBottom: 36,
-    lineHeight: 26,
-    paddingHorizontal: 8,
+    marginBottom: 24,
+    lineHeight: 24,
+    paddingHorizontal: 4,
   },
   ctaButton: {
-    marginTop: 12,
+    marginTop: 8,
     borderRadius: 999,
     paddingHorizontal: 32,
   },
@@ -306,17 +362,6 @@ const styles = StyleSheet.create({
   },
   ctaButtonContent: {
     flexDirection: 'row',
-  },
-  secondaryButton: {
-    marginTop: 12,
-    borderRadius: 999,
-    borderWidth: 2,
-    borderColor: '#69B47A',
-  },
-  secondaryButtonLabel: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#69B47A',
   },
   featuresSection: {
     paddingVertical: 8,
@@ -357,14 +402,12 @@ const styles = StyleSheet.create({
   featureTitle: {
     fontWeight: '700',
   },
-  premiumBadge: {
-    backgroundColor: '#FFD54F',
+  featureBadge: {
     paddingHorizontal: 10,
     paddingVertical: 2,
     borderRadius: 12,
   },
-  premiumText: {
-    color: '#1A1A1A',
+  featureBadgeText: {
     fontSize: 11,
     fontWeight: '700',
   },
@@ -379,6 +422,12 @@ const styles = StyleSheet.create({
   featureCtaLabel: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  featureCtaDisabled: {
+    borderColor: 'rgba(48, 64, 58, 0.3)',
+  },
+  featureCtaLabelDisabled: {
+    color: 'rgba(48, 64, 58, 0.6)',
   },
   note: {
     textAlign: 'center',

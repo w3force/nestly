@@ -15,7 +15,7 @@ import {
  * Projects from current age to 65 with annual contributions and returns
  */
 export function calculateProjection(scenario: WhatIfScenario): ProjectionPoint[] {
-  const retirementAge = 65;
+  const retirementAge = scenario.targetAge ?? 65;
   const years = retirementAge - scenario.age;
   
   if (years <= 0) {
@@ -25,8 +25,7 @@ export function calculateProjection(scenario: WhatIfScenario): ProjectionPoint[]
   const data: ProjectionPoint[] = [];
   let balance = scenario.currentSavings;
   
-  // Assuming $100k annual income for contribution calculation
-  const annualIncome = 100000;
+  const annualIncome = scenario.income ?? 100000;
   const savingsRate = scenario.savingsRate ?? scenario.contribution ?? 0;
   const annualContribution = annualIncome * (savingsRate / 100);
   const realReturnRate = (scenario.returnRate - scenario.inflation) / 100;

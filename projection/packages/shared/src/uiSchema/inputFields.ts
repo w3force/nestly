@@ -140,6 +140,39 @@ export const SCENARIO_NAME_FIELD: InputFieldDefinition = {
 };
 
 /**
+ * Annual Income (What-If)
+ */
+export const INCOME_FIELD: InputFieldDefinition = {
+  id: 'income',
+  label: 'Annual Income',
+  description: 'Household income used when calculating contributions',
+  helpTopicId: 'whatif_income',
+  type: 'textInput',
+  defaultValue: 100000,
+  constraints: {
+    min: 0,
+    max: 1000000,
+    step: 1000,
+    decimalPlaces: 0,
+    displayUnit: '$',
+    prefix: '$',
+    format: (v) => `$${v.toLocaleString()}`,
+    parse: (v) => parseFloat(v.replace(/[^0-9.]/g, '')),
+  },
+  renderHints: {
+    platform: 'both',
+    layout: 'full',
+    priority: 5,
+  },
+  validationRules: [
+    createRequiredRule('Income'),
+    createMinRule(0, 'Income must be at least'),
+  ],
+  examples: ['$80,000', '$120,000', '$150,000'],
+  category: 'income',
+};
+
+/**
  * Annual Contribution (Deterministic Tab)
  * Uses 2025 401(k) limits
  */
@@ -356,6 +389,82 @@ export const WHATIF_SAVINGS_RATE_FIELD: InputFieldDefinition = {
   ],
   examples: ['10%', '20%', '35%'],
   category: 'savings',
+};
+
+/**
+ * Target Retirement Age (What-If)
+ */
+export const TARGET_AGE_FIELD: InputFieldDefinition = {
+  id: 'targetAge',
+  label: 'Target Retirement Age',
+  description: 'Age when you would like to retire',
+  helpTopicId: 'whatif_target_age',
+  type: 'slider',
+  defaultValue: 65,
+  constraints: {
+    min: 50,
+    max: 75,
+    step: 1,
+    decimalPlaces: 0,
+    displayUnit: 'years',
+    format: (v) => `${v} years`,
+    parse: (v) => parseInt(v, 10),
+  },
+  renderHints: {
+    platform: 'both',
+    layout: 'full',
+    priority: 6,
+  },
+  metadata: {
+    slider: {
+      rangeIndicators: [
+        { label: '55', value: 55 },
+        { label: '60', value: 60 },
+        { label: '65', value: 65 },
+        { label: '70', value: 70 },
+      ],
+    },
+  },
+  validationRules: [
+    createRequiredRule('Target retirement age'),
+    createMinRule(50, 'Target age must be at least'),
+    createMaxRule(75, 'Target age cannot exceed'),
+  ],
+  examples: ['62', '65', '70'],
+  category: 'goals',
+};
+
+/**
+ * Target Retirement Income (What-If)
+ */
+export const TARGET_INCOME_FIELD: InputFieldDefinition = {
+  id: 'targetIncome',
+  label: 'Target Retirement Income',
+  description: 'Desired annual income in retirement',
+  helpTopicId: 'whatif_target_income',
+  type: 'textInput',
+  defaultValue: 70000,
+  constraints: {
+    min: 0,
+    max: 500000,
+    step: 1000,
+    decimalPlaces: 0,
+    displayUnit: '$',
+    prefix: '$',
+    format: (v) => `$${v.toLocaleString()}`,
+    parse: (v) => parseFloat(v.replace(/[^0-9.]/g, '')),
+  },
+  renderHints: {
+    platform: 'both',
+    layout: 'full',
+    priority: 7,
+  },
+  validationRules: [
+    createRequiredRule('Target income'),
+    createMinRule(0, 'Target income must be at least'),
+  ],
+  examples: ['$60,000', '$75,000', '$90,000'],
+  category: 'goals',
 };
 
 /**
@@ -634,8 +743,11 @@ export const FIELD_DEFINITIONS: Record<string, InputFieldDefinition> = {
   contribution: ANNUAL_CONTRIBUTION_FIELD,
   contributionRate: CONTRIBUTION_RATE_FIELD,
   scenarioName: SCENARIO_NAME_FIELD,
+  income: INCOME_FIELD,
   savingsRate: WHATIF_SAVINGS_RATE_FIELD,
   currentSavings: CURRENT_SAVINGS_FIELD,
+  targetAge: TARGET_AGE_FIELD,
+  targetIncome: TARGET_INCOME_FIELD,
   expectedReturn: EXPECTED_RETURN_FIELD,
   inflation: INFLATION_FIELD,
 };

@@ -14,3 +14,4 @@ export { SliderWithInfo } from './SliderWithInfo';
 export { CompactInputField } from './CompactInputField';
 export { SectionHeader } from './SectionHeader';
 export { ResultsSummary } from './ResultsSummary';
+export { ScenarioDock } from './ScenarioDock';

@@ -1,20 +1,33 @@
-import React, { useState, useEffect } from 'react';
-import { View, ScrollView, StyleSheet, FlatList } from 'react-native';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { View, ScrollView, StyleSheet, SafeAreaView, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Text, Card, List, Button, Divider, useTheme, Portal, Modal } from 'react-native-paper';
-import { TIER_CONFIGS, TIER_COMPARISON } from '@projection/shared';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { PlansComparison } from '../components';
+import {
+  Text,
+  Card,
+  Button,
+  Divider,
+  Portal,
+  Modal,
+  IconButton,
+  Chip,
+} from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
 import { useTier } from '../contexts/TierContext';
+import { COLORS, SPACING, BORDER_RADIUS } from '@projection/shared';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+
+const PAGE_ICON_NAME = 'account-circle-outline';
+const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
 export default function ProfileScreen() {
-  const theme = useTheme();
   const navigation = useNavigation();
-  const { currentTier, tierConfig, features } = useTier();
+  const { tierConfig, features } = useTier();
+  const displayMaxScenarios = Math.max(features.maxScenarios || 0, 10);
   const [showSavedScenarios, setShowSavedScenarios] = useState(false);
   const [savedScenarios, setSavedScenarios] = useState<any[]>([]);
 
-  // Load scenarios when modal is opened
   useEffect(() => {
     if (showSavedScenarios) {
       loadScenarios();
@@ -32,189 +45,249 @@ export default function ProfileScreen() {
     }
   };
 
+  const scenariosAvailableText = displayMaxScenarios === Infinity ? '∞' : displayMaxScenarios;
+  const insets = useSafeAreaInsets();
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const headerOpacity = useMemo(
+    () =>
+      scrollY.interpolate({
+        inputRange: [40, 120],
+        outputRange: [0, 1],
+        extrapolate: 'clamp',
+      }),
+    [scrollY],
+  );
+  const headerTranslate = useMemo(
+    () =>
+      scrollY.interpolate({
+        inputRange: [0, 120],
+        outputRange: [-16, 0],
+        extrapolate: 'clamp',
+      }),
+    [scrollY],
+  );
+
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.content}>
-        {/* Tier Badge Card */}
-        <Card style={[styles.card, { backgroundColor: tierConfig.color }]}>
-          <Card.Content>
-            <View style={styles.tierHeader}>
-              <Text style={styles.tierBadge}>{tierConfig.badge}</Text>
-              <View style={styles.tierInfo}>
-                <Text variant="headlineSmall" style={[styles.tierName, { color: '#fff' }]}>
-                  {tierConfig.name}
-                </Text>
-                <Text variant="bodyMedium" style={[styles.tierDescription, { color: 'rgba(255,255,255,0.9)' }]}>
-                  {tierConfig.description}
+    <SafeAreaView style={styles.safeArea}>
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.collapsedHeader,
+          {
+            paddingTop: insets.top,
+            opacity: headerOpacity,
+            transform: [{ translateY: headerTranslate }],
+          },
+        ]}
+      >
+        <View style={styles.collapsedHeaderContent}>
+          <View style={styles.collapsedHeaderIcon}>
+            <MaterialCommunityIcons
+              name={PAGE_ICON_NAME}
+              size={18}
+              color="#30403A"
+            />
+          </View>
+          <Text variant="titleMedium" style={styles.collapsedHeaderTitle}>
+            Profile
+          </Text>
+        </View>
+      </Animated.View>
+      <AnimatedScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: SPACING.lg + insets.top },
+        ]}
+        showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true },
+        )}
+      >
+        <LinearGradient
+          colors={['#E9F7EF', '#D9F1E6']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.brandHeader}
+        >
+          <View style={styles.brandHeaderContent}>
+            <View style={styles.brandHeaderLeft}>
+              <View style={styles.brandIconBadge}>
+                <MaterialCommunityIcons
+                  name={PAGE_ICON_NAME}
+                  size={28}
+                  color="#30403A"
+                />
+              </View>
+              <View>
+                <Text variant="titleLarge" style={styles.brandTitle}>
+                  Nestly Planner
                 </Text>
               </View>
             </View>
+            <Chip
+              icon="crown"
+              compact
+              style={styles.tierChip}
+              textStyle={styles.tierChipText}
+            >
+              {tierConfig.name} Tier
+            </Chip>
+          </View>
+        </LinearGradient>
 
-            {/* Feature Summary */}
-            <View style={styles.featuresSummary}>
-              <Text variant="bodySmall" style={[styles.featuresTitle, { color: 'rgba(255,255,255,0.95)' }]}>
-                Your Plan Includes:
-              </Text>
-              <Text variant="bodySmall" style={[styles.featureItem, { color: 'rgba(255,255,255,0.9)' }]}>
-                • {features.monteCarloFullAccess ? 'Full' : 'Preview'} Monte Carlo Analysis ({features.maxSimulations.toLocaleString()} simulations)
-              </Text>
-              <Text variant="bodySmall" style={[styles.featureItem, { color: 'rgba(255,255,255,0.9)' }]}>
-                • Up to {features.maxScenarios} What-If Scenarios
-              </Text>
-              <Text variant="bodySmall" style={[styles.featureItem, { color: 'rgba(255,255,255,0.9)' }]}>
-                • SS & Healthcare {features.ssDetailedMode ? 'Detailed' : 'Quick'} Mode
-              </Text>
-            </View>
-
-            {currentTier === 'FREE' && (
-              <Button
-                mode="contained"
-                onPress={() => (navigation as any).navigate('Plans')}
-                style={[styles.upgradeButton, { backgroundColor: '#fff' }]}
-                labelStyle={{ color: tierConfig.color }}
-                icon="star"
-              >
-                Upgrade to Pro or Premium
-              </Button>
-            )}
-            {currentTier !== 'FREE' && (
-              <Button
-                mode="contained"
-                onPress={() => (navigation as any).navigate('Plans')}
-                style={[styles.upgradeButton, { backgroundColor: 'rgba(255,255,255,0.3)' }]}
-                labelStyle={{ color: '#fff' }}
-              >
-                View All Plans
-              </Button>
-            )}
-          </Card.Content>
-        </Card>
-
-        {/* User Info Card */}
         <Card style={styles.card}>
           <Card.Content>
-            <Text variant="headlineSmall" style={styles.title}>
-              Account
-            </Text>
+            <View style={styles.sectionHeader}>
+              <View>
+                <Text variant="titleMedium" style={styles.sectionTitle}>
+                  Account Overview
+                </Text>
+                <Text variant="bodySmall" style={styles.sectionDescription}>
+                  Track your access and usage details
+                </Text>
+              </View>
+            </View>
+
             <View style={styles.accountInfo}>
               <View style={styles.accountRow}>
-                <Text variant="bodyMedium" style={styles.accountLabel}>Current Tier:</Text>
-                <Text variant="bodyMedium" style={[styles.accountValue, { color: tierConfig.color }]}>
+                <Text variant="bodyMedium" style={styles.accountLabel}>
+                  Current Tier
+                </Text>
+                <Text
+                  variant="bodyMedium"
+                  style={[styles.accountValue, { color: tierConfig.color }]}
+                >
                   {tierConfig.name}
                 </Text>
               </View>
-              <Divider style={styles.accountDivider} />
+              <Divider style={styles.divider} />
               <View style={styles.accountRow}>
-                <Text variant="bodyMedium" style={styles.accountLabel}>Scenarios Used:</Text>
+                <Text variant="bodyMedium" style={styles.accountLabel}>
+                  Scenarios Used
+                </Text>
                 <Text variant="bodyMedium" style={styles.accountValue}>
-                  0 / {features.maxScenarios === Infinity ? '∞' : features.maxScenarios}
+                  0 / {scenariosAvailableText}
                 </Text>
               </View>
-              <Divider style={styles.accountDivider} />
+              <Divider style={styles.divider} />
               <View style={styles.accountRow}>
-                <Text variant="bodyMedium" style={styles.accountLabel}>Status:</Text>
-                <Text variant="bodyMedium" style={[styles.accountValue, { color: '#69B47A' }]}>
+                <Text variant="bodyMedium" style={styles.accountLabel}>
+                  Status
+                </Text>
+                <Text variant="bodyMedium" style={[styles.accountValue, styles.accountActive]}>
                   Active
                 </Text>
               </View>
             </View>
+
+            <View style={styles.highlights}>
+              <Text variant="labelSmall" style={styles.highlightsTitle}>
+                Highlights
+              </Text>
+              <Text variant="bodySmall" style={styles.highlightItem}>
+                • Monte Carlo upgrades — coming soon
+              </Text>
+              <Text variant="bodySmall" style={styles.highlightItem}>
+                • Social Security & Healthcare planner — coming soon
+              </Text>
+              <Text variant="bodySmall" style={styles.highlightItem}>
+                • Up to {scenariosAvailableText} What-If scenarios
+              </Text>
+            </View>
           </Card.Content>
         </Card>
 
-        {/* Settings */}
         <Card style={styles.card}>
           <Card.Content>
-            <Text variant="titleMedium" style={styles.subtitle}>
-              Settings & Scenarios
-            </Text>
+            <View style={styles.sectionHeader}>
+              <View>
+                <Text variant="titleMedium" style={styles.sectionTitle}>
+                  Saved Scenarios
+                </Text>
+                <Text variant="bodySmall" style={styles.sectionDescription}>
+                  Manage your personalized what-if plans
+                </Text>
+              </View>
+              <Button
+                compact
+                mode="contained"
+                onPress={() => setShowSavedScenarios(true)}
+                style={styles.sectionButton}
+              >
+                View
+              </Button>
+            </View>
           </Card.Content>
-          <List.Item
-            title="Saved Scenarios"
-            description="Manage your saved what-if scenarios"
-            left={(props) => <List.Icon {...props} icon="content-save" />}
-            onPress={() => setShowSavedScenarios(true)}
-          />
         </Card>
 
-        {/* Tier Info */}
         <Card style={styles.card}>
           <Card.Content>
-            <Text variant="titleMedium" style={styles.subtitle}>
-              Plan: {tierConfig.name} Tier
-            </Text>
-            <Text variant="bodySmall" style={styles.tierNote}>
-              {currentTier === 'FREE' ? 'Upgrade to Premium for advanced features' : 'You have access to all premium features'}
-            </Text>
-          </Card.Content>
-          <Card.Actions>
-            <Button mode="contained" onPress={() => (navigation as any).navigate('Plans')}>
-              View Plans
-            </Button>
-          </Card.Actions>
-        </Card>
-
-        {/* About */}
-        <Card style={styles.card}>
-          <Card.Content>
-            <Text variant="titleMedium" style={styles.subtitle}>
-              About
-            </Text>
+            <View style={styles.sectionHeader}>
+              <View>
+                <Text variant="titleMedium" style={styles.sectionTitle}>
+                  About
+                </Text>
+                <Text variant="bodySmall" style={styles.sectionDescription}>
+                  Nestly Planner mobile preview
+                </Text>
+              </View>
+            </View>
             <Text variant="bodySmall" style={styles.aboutText}>
               Retirement Planning App v0.1.0
             </Text>
-            <Text variant="bodySmall" style={styles.aboutText}>
-              Built with React Native & Expo
-            </Text>
           </Card.Content>
         </Card>
-      </View>
+      </AnimatedScrollView>
 
-      {/* Saved Scenarios Modal */}
       <Portal>
         <Modal
           visible={showSavedScenarios}
           onDismiss={() => setShowSavedScenarios(false)}
-          contentContainerStyle={styles.planModalContainer}
+          contentContainerStyle={styles.modalContainer}
         >
-          <View style={styles.planModalContent}>
-            <View style={styles.planModalHeader}>
-              <Text variant="headlineSmall" style={styles.planModalTitle}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHandle} />
+            <View style={styles.modalHeader}>
+              <Text variant="titleMedium" style={styles.modalTitle}>
                 Saved Scenarios ({savedScenarios.length})
               </Text>
-              <Button
-                mode="text"
+              <IconButton
+                icon="close"
+                size={20}
                 onPress={() => setShowSavedScenarios(false)}
-                style={styles.closeButton}
-              >
-                ✕
-              </Button>
+                accessibilityLabel="Close saved scenarios"
+              />
             </View>
-
-            <ScrollView style={styles.plansList} showsVerticalScrollIndicator={false}>
+            <ScrollView
+              style={styles.modalScroll}
+              contentContainerStyle={styles.modalScrollContent}
+              showsVerticalScrollIndicator={false}
+            >
               {savedScenarios.length === 0 ? (
-                <Card style={styles.planCard}>
-                  <Card.Content>
-                    <Text variant="bodyMedium" style={{ textAlign: 'center', opacity: 0.6, marginVertical: 32 }}>
-                      No saved scenarios yet
-                    </Text>
-                    <Text variant="bodySmall" style={{ textAlign: 'center', opacity: 0.5 }}>
-                      Create and save scenarios from the What-If tab to access them here
-                    </Text>
-                  </Card.Content>
-                </Card>
+                <View style={styles.emptyState}>
+                  <Text variant="bodyMedium" style={styles.emptyStateTitle}>
+                    No saved scenarios yet
+                  </Text>
+                  <Text variant="bodySmall" style={styles.emptyStateDescription}>
+                    Create and save scenarios from the What-If tab to access them here.
+                  </Text>
+                </View>
               ) : (
                 savedScenarios.map((scenario, index) => (
                   <Card key={scenario.id || index} style={styles.scenarioCard}>
                     <Card.Content>
                       <View style={styles.scenarioHeader}>
-                        <View style={{ flex: 1 }}>
-                          <Text variant="titleMedium" style={{ fontWeight: '700', marginBottom: 4 }}>
+                        <View style={styles.scenarioDetails}>
+                          <Text variant="titleSmall" style={styles.scenarioTitle}>
                             {scenario.name}
                           </Text>
-                          <Text variant="bodySmall" style={{ opacity: 0.6 }}>
+                          <Text variant="bodySmall" style={styles.scenarioMeta}>
                             Savings Rate: {scenario.savingsRate ?? scenario.contribution ?? 0}%
                           </Text>
-                          <Text variant="bodySmall" style={{ opacity: 0.6 }}>
+                          <Text variant="bodySmall" style={styles.scenarioMeta}>
                             Return: {scenario.return}%
                           </Text>
                         </View>
@@ -236,259 +309,234 @@ export default function ProfileScreen() {
           </View>
         </Modal>
       </Portal>
-    </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
+    backgroundColor: '#F2FBF5',
   },
-  content: {
-    padding: 16,
+  collapsedHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingBottom: 10,
+    paddingHorizontal: SPACING.lg,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(48, 64, 58, 0.08)',
+    backgroundColor: '#F2FBF5',
+    zIndex: 20,
   },
-  card: {
-    marginBottom: 16,
-  },
-  title: {
-    marginBottom: 12,
-    fontWeight: '700',
-  },
-  subtitle: {
-    marginBottom: 8,
-    fontWeight: '600',
-  },
-  description: {
-    marginBottom: 12,
-    opacity: 0.8,
-  },
-  note: {
-    opacity: 0.6,
-    fontStyle: 'italic',
-  },
-  tierNote: {
-    opacity: 0.7,
-    marginTop: 4,
-  },
-  aboutText: {
-    opacity: 0.7,
-    marginTop: 4,
-  },
-  tierHeader: {
+  collapsedHeaderContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    gap: SPACING.xs,
   },
-  tierBadge: {
-    fontSize: 56,
-    marginRight: 16,
+  collapsedHeaderIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(99, 125, 255, 0.16)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(73, 101, 210, 0.22)',
   },
-  tierInfo: {
-    flex: 1,
-  },
-  tierName: {
+  collapsedHeaderTitle: {
     fontWeight: '700',
-    marginBottom: 4,
+    fontSize: 18,
+    color: '#264336',
   },
-  tierDescription: {
-    opacity: 0.8,
+  content: {
+    padding: SPACING.lg,
+    paddingBottom: SPACING.xxxl * 2,
+    backgroundColor: '#F2FBF5',
   },
-  featuresSummary: {
-    marginVertical: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.2)',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.2)',
+  brandHeader: {
+    borderRadius: BORDER_RADIUS.xl,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.lg,
+    marginBottom: SPACING.lg,
   },
-  featuresTitle: {
+  brandHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: SPACING.md,
+  },
+  brandHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+  brandIconBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(73, 101, 210, 0.16)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(73, 101, 210, 0.2)',
+  },
+  brandTitle: {
+    fontWeight: '700',
+    color: '#264336',
+  },
+  tierChip: {
+    backgroundColor: 'rgba(105, 180, 122, 0.16)',
+  },
+  tierChipText: {
     fontWeight: '600',
-    marginBottom: 8,
-    color: 'rgba(255,255,255,0.95)',
+    color: COLORS.textPrimary,
   },
-  featureItem: {
-    marginBottom: 4,
-    color: 'rgba(255,255,255,0.9)',
+  card: {
+    marginBottom: SPACING.lg,
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: BORDER_RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   },
-  upgradeButton: {
-    marginTop: 8,
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  modalContainer: {
-    backgroundColor: 'white',
-    margin: 0,
-    height: '100%',
-  },
-  modalContent: {
-    flex: 1,
-    padding: 16,
-  },
-  modalTitle: {
-    marginBottom: 16,
+  sectionTitle: {
     fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  sectionDescription: {
+    marginTop: SPACING.xs,
+    color: COLORS.textSecondary,
+  },
+  sectionButton: {
+    marginLeft: SPACING.md,
   },
   accountInfo: {
-    marginTop: 12,
+    marginTop: SPACING.md,
   },
   accountRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: SPACING.sm,
   },
   accountLabel: {
-    flex: 1,
-    opacity: 0.7,
+    color: COLORS.textSecondary,
   },
   accountValue: {
-    flex: 1,
-    textAlign: 'right',
+    color: COLORS.textPrimary,
     fontWeight: '600',
   },
-  accountDivider: {
-    marginVertical: 0,
+  accountActive: {
+    color: COLORS.success,
   },
-  planModalContainer: {
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: COLORS.divider,
+  },
+  highlights: {
+    marginTop: SPACING.lg,
+    paddingTop: SPACING.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: COLORS.borderLight,
+  },
+  highlightsTitle: {
+    color: COLORS.textSecondary,
+    marginBottom: SPACING.xs,
+  },
+  highlightItem: {
+    color: COLORS.textSecondary,
+    marginTop: SPACING.xs,
+  },
+  aboutText: {
+    color: COLORS.textSecondary,
+    marginTop: SPACING.xs,
+  },
+  modalContainer: {
     margin: 0,
+    justifyContent: 'flex-end',
   },
-  planModalContent: {
-    backgroundColor: 'white',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+  modalCard: {
+    backgroundColor: COLORS.surface,
+    borderTopLeftRadius: BORDER_RADIUS.xl,
+    borderTopRightRadius: BORDER_RADIUS.xl,
     maxHeight: '90%',
-    paddingTop: 16,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.xxxl,
   },
-  planModalHeader: {
+  modalHandle: {
+    width: 44,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: COLORS.borderLight,
+    alignSelf: 'center',
+    marginBottom: SPACING.md,
+  },
+  modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    marginBottom: 12,
+    marginBottom: SPACING.md,
   },
-  planModalTitle: {
+  modalTitle: {
     fontWeight: '700',
+    color: COLORS.textPrimary,
   },
-  closeButton: {
-    margin: -8,
+  modalScroll: {
+    flexGrow: 0,
   },
-  plansList: {
-    paddingHorizontal: 16,
-    paddingBottom: 24,
+  modalScrollContent: {
+    paddingBottom: SPACING.xxl,
   },
-  planCard: {
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
-  },
-  planCardActive: {
-    borderWidth: 2,
-    borderColor: '#69B47A',
-    backgroundColor: 'rgba(105, 180, 122, 0.05)',
-  },
-  planCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  planCardInfo: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  planDescription: {
-    opacity: 0.7,
-    marginTop: 2,
-  },
-  planPricing: {
-    marginVertical: 12,
-    paddingVertical: 8,
-  },
-  planButton: {
-    marginTop: 8,
-  },
-  tierCardsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-    paddingHorizontal: 4,
-    gap: 8,
-  },
-  comparisonTierCard: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
-  },
-  comparisonTierCardActive: {
-    borderWidth: 2,
-    borderColor: '#69B47A',
-    backgroundColor: 'rgba(105, 180, 122, 0.08)',
-  },
-  comparisonTierName: {
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  comparisonPrice: {
+  emptyState: {
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
+    paddingVertical: SPACING.xxl,
+    paddingHorizontal: SPACING.lg,
   },
-  comparisonTable: {
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
-    borderRadius: 8,
-    marginBottom: 16,
-    overflow: 'hidden',
-  },
-  comparisonRow: {
-    flexDirection: 'row',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    backgroundColor: 'rgba(0,0,0,0.02)',
-  },
-  featureNameCol: {
-    flex: 2,
-    marginRight: 8,
-  },
-  featureName: {
-    fontWeight: '500',
-    lineHeight: 18,
-  },
-  featureValueCol: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  featureValue: {
+  emptyStateTitle: {
     fontWeight: '600',
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.sm,
     textAlign: 'center',
   },
-  featureAvailable: {
-    color: '#4CAF50',
-  },
-  featureUnavailable: {
-    color: '#999',
-  },
-  comparisonRowDivider: {
-    height: 1,
-    backgroundColor: 'rgba(0,0,0,0.06)',
-  },
-  plansCtaContainer: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 24,
-  },
-  planCtaButton: {
-    flex: 1,
+  emptyStateDescription: {
+    color: COLORS.textSecondary,
+    textAlign: 'center',
   },
   scenarioCard: {
-    marginBottom: 12,
-    borderRadius: 8,
+    marginBottom: SPACING.md,
+    borderRadius: BORDER_RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
   },
   scenarioHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 12,
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+  scenarioDetails: {
+    flex: 1,
+  },
+  scenarioTitle: {
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.xs,
+  },
+  scenarioMeta: {
+    color: COLORS.textSecondary,
+    marginTop: SPACING.xs / 2,
   },
 });

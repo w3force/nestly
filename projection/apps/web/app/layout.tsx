@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Nestly',
@@ -40,8 +41,12 @@ export default function RootLayout({
         <GlobalStyles
           styles={{
             ':root': { fontFamily: "'Inter', system-ui, sans-serif" },
-            'html, body': { margin: 0, padding: 0 },
-            body: { margin: 0 },
+            'html, body, #__next, main': {
+              margin: 0,
+              padding: 0,
+              minHeight: '100%',
+            },
+            body: { margin: '0 !important', padding: 0 },
           }}
         />
         <Providers>

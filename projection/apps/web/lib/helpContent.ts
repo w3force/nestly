@@ -18,6 +18,22 @@ export const helpContent = {
       title: "Annual Contribution",
       description: "How much you (and your employer) contribute each year. Include employer match.",
     },
+    contributionRate: {
+      title: "Savings Rate",
+      description: "The percentage of your income you invest for retirement. Increasing this percentage is one of the fastest ways to close retirement gaps.",
+    },
+    whatif_income: {
+      title: "Annual Income",
+      description: "Your household income before taxes. Combined with your savings rate it determines how many dollars you invest each year.",
+    },
+    whatif_target_age: {
+      title: "Target Retirement Age",
+      description: "The age you plan to retire. Later ages give more time for savings to grow and reduce how long they need to fund retirement.",
+    },
+    whatif_target_income: {
+      title: "Target Retirement Income",
+      description: "Desired annual income during retirement (in today’s dollars). Use this to see if your plan meets the lifestyle you want.",
+    },
     expectedReturn: {
       title: "Expected Return",
       description: "Average annual growth rate. Conservative: 5-6%, Moderate: 7-8%, Aggressive: 9-10%. Historical stock market average is ~7% after inflation. Recent 401(k) benchmarks: ~8.5% (5-year), ~7.5% (10-year), and ~7.0% (15-year) based on total U.S. stock market returns.",

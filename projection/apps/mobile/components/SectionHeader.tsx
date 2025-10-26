@@ -15,8 +15,8 @@ interface SectionHeaderProps {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
-    paddingBottom: 12,
+    marginBottom: 12,
+    paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(48, 64, 58, 0.08)',
   },

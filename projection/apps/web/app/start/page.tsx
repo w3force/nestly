@@ -2,6 +2,7 @@
 
 import React, { useMemo } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Box,
   Button,
@@ -10,6 +11,7 @@ import {
   Chip,
   Container,
   Grid,
+  Paper,
   Stack,
   Typography,
 } from "@mui/material";
@@ -26,6 +28,8 @@ import QuickStartSection, {
   QuickStartReadinessLevel,
 } from "../../components/QuickStartSection";
 import { useUser } from "../../contexts/UserContext";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 40 },
@@ -38,6 +42,11 @@ const fadeIn = {
   animate: { opacity: 1 },
   transition: { duration: 0.8, ease: "easeOut" as const, delay: 0.2 },
 } as const;
+
+const HERO_ICON_SOURCE_MAP: Record<string, string> = {
+  "nestly-default": "/icon-192x192.png",
+  favicon: "/favicon-96x96.png",
+};
 
 const float = {
   animate: {
@@ -71,11 +80,20 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 export default function StartPage(): JSX.Element {
   const { setUser } = useUser();
+  const heroSectionBase =
+    landingScreen.sections.find((section) => section.id === "hero") ?? landingScreen.sections[0];
+  const heroMetaBase = (heroSectionBase?.metadata as Record<string, unknown>) ?? {};
+  const metaHeroIconBase = heroMetaBase.heroIcon;
+  const heroIconKey =
+    typeof metaHeroIconBase === "string" && metaHeroIconBase.trim().length > 0 ? metaHeroIconBase.trim() : undefined;
+  const heroIconSrc =
+    heroIconKey && heroIconKey.startsWith("/")
+      ? heroIconKey
+      : HERO_ICON_SOURCE_MAP[heroIconKey ?? ""] ?? "/icon-192x192.png";
 
   const heroRenderer = useMemo(() => {
-    const heroSection =
-      landingScreen.sections.find((section) => section.id === "hero") ?? landingScreen.sections[0];
-    const heroMeta = (heroSection.metadata as Record<string, unknown>) ?? {};
+    const heroSection = heroSectionBase;
+    const heroMeta = heroMetaBase;
     const heroTitle =
       (typeof heroMeta.heroTitle === "string" && heroMeta.heroTitle.trim().length > 0
         ? (heroMeta.heroTitle as string)
@@ -113,161 +131,204 @@ export default function StartPage(): JSX.Element {
     };
 
     return () => (
-      <Container maxWidth="sm" sx={{ position: "relative", zIndex: 2 }}>
-        <Stack spacing={{ xs: 4, md: 5 }} alignItems="center" textAlign="center">
-          <motion.div initial={fadeInUp.initial} animate={fadeInUp.animate} transition={{ ...fadeInUp.transition, delay: 0 }}>
-            <Box
-              sx={{
-                width: 104,
-                height: 104,
-                borderRadius: "50%",
-                background: "linear-gradient(135deg, #69B47A 0%, #4ABDAC 100%)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 12px 40px rgba(105, 180, 122, 0.28)",
-                fontSize: "3.2rem",
-              }}
-            >
-              🪺
-            </Box>
-          </motion.div>
+      <Container maxWidth="md" sx={{ position: "relative", zIndex: 2 }}>
+        <Paper
+          elevation={0}
+          sx={{
+            position: "relative",
+            overflow: "hidden",
+            px: { xs: 3, sm: 4, md: 6 },
+            py: { xs: 4, md: 6 },
+            borderRadius: "36px",
+            background: "linear-gradient(135deg, rgba(233, 247, 239, 0.98) 0%, rgba(217, 241, 230, 0.99) 100%)",
+            border: "1px solid rgba(74, 189, 172, 0.22)",
+            boxShadow: "0 26px 72px rgba(74, 189, 172, 0.25)",
+          }}
+        >
+          <Box
+            sx={{
+              position: "absolute",
+              width: 320,
+              height: 320,
+              top: -140,
+              right: -130,
+              background: "radial-gradient(circle, rgba(74,189,172,0.35) 0%, rgba(74,189,172,0) 70%)",
+              opacity: 0.55,
+            }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              width: 260,
+              height: 260,
+              bottom: -120,
+              left: -90,
+              background: "radial-gradient(circle, rgba(105,180,122,0.32) 0%, rgba(105,180,122,0) 76%)",
+              opacity: 0.55,
+            }}
+          />
 
-          <motion.div
-            initial={fadeInUp.initial}
-            animate={fadeInUp.animate}
-            transition={{ ...fadeInUp.transition, delay: 0.1 }}
-          >
-            <Typography
-              variant="h1"
-              sx={{
-                fontWeight: 800,
-                fontSize: { xs: "3rem", md: "4rem" },
-                background: "linear-gradient(135deg, #69B47A 0%, #4ABDAC 100%)",
-                backgroundClip: "text",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                letterSpacing: "-0.02em",
-              }}
-            >
-              {heroTitle}
-            </Typography>
-          </motion.div>
-
-          <motion.div
-            initial={fadeInUp.initial}
-            animate={fadeInUp.animate}
-            transition={{ ...fadeInUp.transition, delay: 0.2 }}
-          >
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: 500,
-                color: "#30403A",
-                fontSize: { xs: "1.25rem", md: "1.5rem" },
-                maxWidth: "34ch",
-                lineHeight: 1.4,
-              }}
-            >
-              {heroTagline}
-            </Typography>
-          </motion.div>
-
-          <motion.div initial={fadeIn.initial} animate={fadeIn.animate} transition={fadeIn.transition}>
-            <Typography
-              variant="body1"
-              sx={{
-                maxWidth: "48ch",
-                color: "rgba(48, 64, 58, 0.8)",
-                fontSize: { xs: "1rem", md: "1.15rem" },
-                lineHeight: 1.7,
-              }}
-            >
-              {heroDescription}
-            </Typography>
-          </motion.div>
-
-          {guestWelcome && (
-            <motion.div initial={fadeIn.initial} animate={fadeIn.animate} transition={{ ...fadeIn.transition, delay: 0.2 }}>
+          <Stack spacing={{ xs: 1, md: 1.8 }} alignItems="center" textAlign="center">
+            <motion.div initial={fadeInUp.initial} animate={fadeInUp.animate} transition={{ ...fadeInUp.transition, delay: 0 }}>
               <Box
                 sx={{
-                  px: 3,
-                  py: 1.5,
-                  borderRadius: 2,
-                  backgroundColor: "rgba(105, 180, 122, 0.1)",
-                  border: "1px solid rgba(105, 180, 122, 0.3)",
+                  width: 92,
+                  height: 92,
+                  borderRadius: "26px",
+                  background: "linear-gradient(135deg, rgba(74, 189, 172, 0.18) 0%, rgba(105, 180, 122, 0.25) 100%)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 16px 32px rgba(74, 189, 172, 0.24)",
+                  border: "1px solid rgba(74, 189, 172, 0.25)",
+                  backdropFilter: "blur(6px)",
+                  mt: { xs: -0.5, md: -1 },
                 }}
               >
-                <Typography variant="body2" color="#30403A" fontWeight={500}>
-                  {guestWelcome}
-                </Typography>
+                <Image
+                  src={heroIconSrc}
+                  alt="Nestly planner icon"
+                  width={60}
+                  height={60}
+                  style={{ borderRadius: "18px" }}
+                  priority
+                />
               </Box>
             </motion.div>
-          )}
 
-          <motion.div
-            initial={fadeIn.initial}
-            animate={fadeIn.animate}
-            transition={{ ...fadeIn.transition, delay: 0.3 }}
-            style={{ width: "100%" }}
-          >
-            <Stack spacing={2} sx={{ width: "100%", maxWidth: 420, mx: "auto" }}>
-              <Button
-                component={Link}
-                href="/?mode=guest"
-                onClick={handleGuestMode}
-                variant="contained"
-                size="large"
+            <motion.div initial={fadeInUp.initial} animate={fadeInUp.animate} transition={{ ...fadeInUp.transition, delay: 0.08 }}>
+              <Typography
+                variant="h1"
                 sx={{
-                  py: 1.75,
-                  fontSize: "1.05rem",
-                  borderRadius: 99,
-                  textTransform: "none",
-                  fontWeight: 600,
-                  backgroundColor: "#69B47A",
-                  boxShadow: "0 10px 28px rgba(105, 180, 122, 0.3)",
-                  ":hover": {
-                    backgroundColor: "#5AA468",
-                    boxShadow: "0 14px 32px rgba(105, 180, 122, 0.38)",
-                    transform: "translateY(-2px)",
-                  },
-                  transition: "all 0.3s ease",
+                  fontWeight: 800,
+                  fontSize: { xs: "2.55rem", md: "3.5rem" },
+                  background: "linear-gradient(135deg, #264336 0%, #3F6B59 100%)",
+                  backgroundClip: "text",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.18em",
+                  fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                 }}
               >
-                {primaryCTA}
-              </Button>
+                {heroTitle}
+              </Typography>
+            </motion.div>
 
-              <Button
-                component={Link}
-                href={secondaryLink}
-                variant="outlined"
-                size="large"
+            <motion.div initial={fadeInUp.initial} animate={fadeInUp.animate} transition={{ ...fadeInUp.transition, delay: 0.14 }}>
+              <Typography
+                variant="h5"
                 sx={{
-                  py: 1.75,
-                  fontSize: "1.05rem",
-                  borderRadius: 99,
-                  textTransform: "none",
                   fontWeight: 600,
-                  borderColor: "#69B47A",
-                  color: "#69B47A",
-                  borderWidth: 2,
-                  ":hover": {
-                    borderWidth: 2,
-                    borderColor: "#5AA468",
-                    backgroundColor: "rgba(105, 180, 122, 0.05)",
-                    transform: "translateY(-2px)",
-                  },
-                  transition: "all 0.3s ease",
+                  color: "#2C5F50",
+                  fontSize: { xs: "1.15rem", md: "1.45rem" },
+                  maxWidth: "38ch",
+                  lineHeight: 1.4,
                 }}
               >
-                {secondaryCTA}
-              </Button>
-            </Stack>
-          </motion.div>
-        </Stack>
-      </Container>
-    );
-  }, [setUser]);
+                {heroTagline}
+              </Typography>
+            </motion.div>
+
+            <motion.div initial={fadeIn.initial} animate={fadeIn.animate} transition={fadeIn.transition}>
+              <Typography
+                variant="body1"
+                sx={{
+                  maxWidth: "54ch",
+                  color: "rgba(38, 67, 54, 0.78)",
+                  fontSize: { xs: "0.98rem", md: "1.08rem" },
+                  lineHeight: 1.55,
+                }}
+              >
+                {heroDescription}
+              </Typography>
+            </motion.div>
+
+            {guestWelcome && (
+              <motion.div initial={fadeIn.initial} animate={fadeIn.animate} transition={{ ...fadeIn.transition, delay: 0.25 }}>
+                <Box
+                  sx={{
+                    px: { xs: 2.5, md: 3 },
+                    py: 1.5,
+                    borderRadius: "999px",
+                    backgroundColor: "rgba(74, 189, 172, 0.12)",
+                    border: "1px solid rgba(74, 189, 172, 0.3)",
+                  }}
+                >
+                  <Typography variant="body2" sx={{ color: "#264336", fontWeight: 600 }}>
+                    {guestWelcome}
+                  </Typography>
+                </Box>
+              </motion.div>
+            )}
+
+            <motion.div initial={fadeInUp.initial} animate={fadeInUp.animate} transition={{ ...fadeInUp.transition, delay: 0.24 }} style={{ width: "100%" }}>
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={1.2}
+                sx={{ width: "100%", maxWidth: 340, mx: "auto" }}
+                alignItems="center"
+              >
+                <Button
+                  component={Link}
+                  href="/?mode=guest"
+                  onClick={handleGuestMode}
+                  variant="contained"
+                  size="large"
+                  startIcon={<ArrowForwardRoundedIcon />}
+                  sx={{
+                    py: 1.65,
+                    fontSize: "1.02rem",
+                    borderRadius: "18px",
+                    textTransform: "none",
+                    fontWeight: 700,
+                    background: "linear-gradient(135deg, #69B47A 0%, #4ABDAC 100%)",
+                    boxShadow: "0 16px 46px rgba(74, 189, 172, 0.35)",
+                    transition: "all 0.3s ease",
+                    ":hover": {
+                      boxShadow: "0 18px 52px rgba(74, 189, 172, 0.45)",
+                      transform: "translateY(-2px)",
+                    },
+                  }}
+                >
+                  {primaryCTA}
+                </Button>
+
+                {secondaryCTA && (
+                  <Button
+                    component={Link}
+                    href={secondaryLink}
+                    variant="outlined"
+                    size="large"
+                    startIcon={<LoginRoundedIcon />}
+                    sx={{
+                    py: 1.65,
+                    fontSize: "1.02rem",
+                    borderRadius: "18px",
+                    textTransform: "none",
+                    fontWeight: 600,
+                      borderColor: "rgba(48, 64, 58, 0.22)",
+                      color: "#30403A",
+                      borderWidth: 2,
+                      transition: "all 0.3s ease",
+                     ":hover": {
+                       borderWidth: 2,
+                       borderColor: "#4ABDAC",
+                       color: "#4ABDAC",
+                       backgroundColor: "rgba(74, 189, 172, 0.08)",
+                     },
+                   }}
+                 >
+                   {secondaryCTA}
+                 </Button>
+               )}
+             </Stack>
+           </motion.div>
+         </Stack>
+       </Paper>
+     </Container>
+  );
+}, [heroSectionBase, heroMetaBase, heroIconSrc, setUser]);
 
   const featureRenderer = useMemo<SectionRendererMap["feature-cards"]>(() => {
     return ({ section }) => {
@@ -296,9 +357,20 @@ export default function StartPage(): JSX.Element {
 
           <Grid container spacing={3}>
             {featureItems.map((item) => {
-              const route = resolveRoute(item.navigateTo ?? item.id);
-              const isPremium = item.badge === "PREMIUM";
+              const badgeLabel =
+                typeof item.badge === "string" && item.badge.trim().length > 0
+                  ? (item.badge as string)
+                  : undefined;
+              const normalizedStatus =
+                typeof item.status === "string" ? (item.status as string).toLowerCase() : undefined;
+              const isComingSoon =
+                normalizedStatus === "comingsoon" ||
+                normalizedStatus === "coming_soon" ||
+                badgeLabel === "COMING SOON";
               const color = item.themeColor ?? iconColorMap[item.id] ?? "#69B47A";
+              const route = resolveRoute(item.navigateTo ?? item.id);
+              const chipBackground = isComingSoon ? "rgba(48, 64, 58, 0.12)" : "#FFD54F";
+              const chipColor = isComingSoon ? "#30403A" : "#1A1A1A";
 
               return (
                 <Grid item xs={12} md={4} key={item.id ?? route}>
@@ -318,37 +390,52 @@ export default function StartPage(): JSX.Element {
                         <Typography variant="h6" sx={{ color: "#30403A", fontWeight: 700 }}>
                           {item.title}
                         </Typography>
-                        {isPremium && (
+                        {badgeLabel && (
                           <Chip
-                            label={item.badge}
+                            label={badgeLabel}
                             size="small"
                             sx={{
                               height: 22,
                               fontWeight: 700,
-                              background: "#FFD54F",
-                              color: "#1A1A1A",
+                              background: chipBackground,
+                              color: chipColor,
                             }}
                           />
                         )}
                       </Box>
                       <Typography sx={{ color: "rgba(48,64,58,0.72)", flexGrow: 1 }}>{item.description}</Typography>
-                      <Button
-                        component={Link}
-                        href={route}
-                        variant="outlined"
-                        sx={{
-                          borderColor: color,
-                          color,
-                          fontWeight: 600,
-                          textTransform: "none",
-                          ":hover": {
+                      {isComingSoon ? (
+                        <Button
+                          variant="outlined"
+                          disabled
+                          sx={{
+                            borderColor: "rgba(48, 64, 58, 0.3)",
+                            color: "rgba(48, 64, 58, 0.6)",
+                            fontWeight: 600,
+                            textTransform: "none",
+                          }}
+                        >
+                          {item.cta ?? "Coming Soon"}
+                        </Button>
+                      ) : (
+                        <Button
+                          component={Link}
+                          href={route}
+                          variant="outlined"
+                          sx={{
                             borderColor: color,
-                            backgroundColor: "rgba(74, 189, 172, 0.08)",
-                          },
-                        }}
-                      >
-                        {item.cta ?? "Open"}
-                      </Button>
+                            color,
+                            fontWeight: 600,
+                            textTransform: "none",
+                            ":hover": {
+                              borderColor: color,
+                              backgroundColor: "rgba(74, 189, 172, 0.08)",
+                            },
+                          }}
+                        >
+                          {item.cta ?? "Open"}
+                        </Button>
+                      )}
                     </CardContent>
                   </Card>
                 </Grid>
@@ -367,6 +454,14 @@ export default function StartPage(): JSX.Element {
     }),
     [featureRenderer, heroRenderer]
   );
+
+  const heroFooterRaw =
+    landingScreen.sections.find((section) => section.id === "hero")?.metadata?.footerNote || "Free forever • No credit card required";
+  const quickStartBadgeLabel = heroFooterRaw
+    ? heroFooterRaw.split("•")[0]?.trim().replace(/\b\w/g, (char) => char.toUpperCase())
+    : "Free Forever";
+  const quickStartBadgeDescription =
+    "We never send personal data to servers — calculations run entirely on your device.";
 
   const customComponentRenderers: CustomComponentRendererMap = useMemo(
     () => ({
@@ -397,14 +492,13 @@ export default function StartPage(): JSX.Element {
               ? (metadata.results as QuickStartResultsMetadata)
               : undefined
           }
+          badgeLabel={quickStartBadgeLabel}
+          badgeDescription={quickStartBadgeDescription}
         />
       ),
     }),
-    []
+    [quickStartBadgeLabel, quickStartBadgeDescription]
   );
-
-  const heroFooter =
-    landingScreen.sections.find((section) => section.id === "hero")?.metadata?.footerNote || "Free forever • No credit card required";
 
   return (
     <Box
@@ -454,15 +548,12 @@ export default function StartPage(): JSX.Element {
         }}
       />
 
-      <Stack spacing={{ xs: 5, md: 8 }} alignItems="center" sx={{ position: "relative", zIndex: 1 }}>
+      <Stack spacing={{ xs: 2.2, md: 4.2 }} alignItems="center" sx={{ position: "relative", zIndex: 1 }}>
         <ScreenRenderer
           screen={landingScreen}
           sectionRenderers={sectionRenderers}
           customComponentRenderers={customComponentRenderers}
         />
-        <Typography variant="caption" sx={{ color: "rgba(48,64,58,0.55)", textAlign: "center" }}>
-          {heroFooter}
-        </Typography>
       </Stack>
     </Box>
   );

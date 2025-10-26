@@ -17,13 +17,13 @@ import {
 } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
 import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
+import CalculateRoundedIcon from "@mui/icons-material/CalculateRounded";
 import { useMutation } from "@tanstack/react-query";
 import { useProjectionStore } from "@projection/core";
 import { COLORS } from "@projection/shared";
 import { useUser } from "../../contexts/UserContext";
 import { DeterministicForm } from "../../components/DeterministicForm";
 import { HelpTooltip } from "../../components/HelpTooltip";
-import { InfoCard } from "../../components/InfoCard";
 import { helpContent } from "../../lib/helpContent";
 
 const ReactECharts = dynamic(() => import("echarts-for-react"), {
@@ -319,49 +319,68 @@ export default function CalculatorPage() {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
-        backgroundColor: COLORS.background,
-        py: { xs: 4, md: 6 },
+        backgroundColor: "#F2FBF5",
+        py: { xs: 3, md: 5 },
       }}
     >
       <Container maxWidth="lg" sx={{ px: { xs: 2, md: 3 } }}>
-        <Box sx={{ mb: 4 }}>
-          <Typography
-            variant="h4"
+        <Box
+          sx={{
+            mb: 3,
+            px: { xs: 2.5, md: 3.5 },
+            py: { xs: 2.5, md: 3 },
+            borderRadius: 3,
+            display: "flex",
+            alignItems: "center",
+            gap: { xs: 2, md: 3 },
+            background: "linear-gradient(135deg, #E9F7EF 0%, #D9F1E6 100%)",
+            boxShadow: "0 16px 32px rgba(38, 67, 54, 0.08)",
+          }}
+        >
+          <Box
             sx={{
+              width: { xs: 46, md: 60 },
+              height: { xs: 46, md: 60 },
+              borderRadius: { xs: "18px", md: "22px" },
+              background: "linear-gradient(135deg, rgba(105, 180, 122, 0.2) 0%, rgba(74, 189, 172, 0.28) 100%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "1px solid rgba(74, 189, 172, 0.3)",
+            }}
+          >
+            <CalculateRoundedIcon
+              sx={{ fontSize: { xs: 28, md: 34 }, color: "#2E7D32" }}
+            />
+          </Box>
+          <Box>
+            <Typography
+              variant="h4"
+              sx={{
               fontWeight: 700,
-              color: COLORS.textPrimary,
-              mb: 0.5,
+              color: "#264336",
+              mb: 0.25,
+              fontSize: { xs: "1.4rem", md: "1.85rem" },
             }}
           >
             401(k) Projection Calculator
           </Typography>
-          <Typography
-            variant="body2"
-            sx={{
-              color: COLORS.textSecondary,
-            }}
-          >
-            Explore deterministic projections to understand how your retirement savings grow over time
-          </Typography>
+            <Typography variant="body1" sx={{ color: "#3F6B59", maxWidth: 520, lineHeight: 1.5 }}>
+              Explore deterministic projections to understand how your retirement savings grow over
+              time while staying mindful of today’s dollars.
+            </Typography>
+          </Box>
         </Box>
 
         <Card
           sx={{
-            backgroundColor: COLORS.cardBackground,
-            borderRadius: 2,
-            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
-            border: `1px solid ${COLORS.cardBorder}`,
-            p: { xs: 2, md: 3 },
+            backgroundColor: "rgba(255, 255, 255, 0.95)",
+            borderRadius: 3,
+            boxShadow: "0 18px 40px rgba(38, 67, 54, 0.08)",
+            border: "1px solid rgba(74, 189, 172, 0.2)",
+            p: { xs: 2, md: 4 },
           }}
         >
-          <InfoCard
-            title="Understanding the Calculator"
-            description="Enter your current financial situation and goals. The calculator will show how your 401(k) balance grows over time through contributions and investment returns. All projections are estimates based on your inputs."
-            defaultExpanded={false}
-            variant="tip"
-          />
-
           <DeterministicForm
             age={age}
             setAge={setAge}
@@ -395,130 +414,123 @@ export default function CalculatorPage() {
           </Alert>
         )}
 
-          {series.length > 0 && !loading && (
-            <Box sx={{ mb: 3 }}>
-              <ReactECharts option={chartOptions} style={{ height: 300 }} />
-            </Box>
-          )}
+        {series.length > 0 && !loading && (
+          <Box sx={{ mb: 3 }}>
+            <ReactECharts option={chartOptions} style={{ height: 300 }} />
+          </Box>
+        )}
 
-          {result && !loading && (
-            <>
-              <InfoCard
-                title="Understanding Your Results"
-                description="Nominal = Future dollar amount (not adjusted for inflation). Real = Today's buying power (adjusted for inflation). Focus on 'Real' to understand what you can actually purchase in retirement."
-                variant="default"
-                defaultExpanded={false}
-              />
-              <Card
-                variant="outlined"
+        {result && !loading && (
+          <Box sx={{ mt: 2 }}>
+            <Card
+              variant="outlined"
+              sx={{
+                backgroundColor: COLORS.cardBackground,
+                borderColor: COLORS.cardBorder,
+                borderRadius: 2,
+              }}
+            >
+              <CardContent>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 1 }}>
+                  <Typography variant="subtitle2" sx={{ color: COLORS.textPrimary, fontWeight: 600 }}>
+                    Final Balances at Retirement
+                  </Typography>
+                  <HelpTooltip
+                    title={helpContent.results.finalBalance.title}
+                    description={helpContent.results.finalBalance.description}
+                  />
+                </Box>
+                <Stack
+                  direction={{ xs: "column", sm: "row" }}
+                  spacing={2.5}
+                  sx={{ mt: 1.5 }}
+                >
+                  <Box>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
+                      <Typography variant="body2" sx={{ color: COLORS.textSecondary, fontWeight: 600 }}>
+                        Real (Today's $)
+                      </Typography>
+                      <HelpTooltip
+                        title={helpContent.general.realDollars.title}
+                        description={helpContent.general.realDollars.description}
+                        size="small"
+                      />
+                    </Box>
+                    <Typography variant="h5" sx={{ color: COLORS.textPrimary, fontWeight: 700 }}>
+                      $
+                      {result.realBalances
+                        .at(-1)
+                        ?.toLocaleString(undefined, { maximumFractionDigits: 0 }) ?? "0"}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{ display: "block", mt: 0.5, color: COLORS.textTertiary }}
+                    >
+                      Reflects today's buying power with your inflation assumption.
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
+                      <Typography variant="body2" sx={{ color: COLORS.textSecondary, fontWeight: 600 }}>
+                        Nominal (Future $)
+                      </Typography>
+                      <HelpTooltip
+                        title={helpContent.general.nominalDollars.title}
+                        description={helpContent.general.nominalDollars.description}
+                        size="small"
+                      />
+                    </Box>
+                    <Typography variant="h6" sx={{ color: COLORS.textPrimary }}>
+                      $
+                      {result.nominalBalances
+                        .at(-1)
+                        ?.toLocaleString(undefined, { maximumFractionDigits: 0 }) ?? "0"}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{ display: "block", mt: 0.5, color: COLORS.textTertiary }}
+                    >
+                      Future dollars before adjusting for inflation.
+                    </Typography>
+                  </Box>
+                </Stack>
+              </CardContent>
+            </Card>
+
+            <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+              <Button
+                variant="contained"
+                startIcon={<SaveIcon />}
+                onClick={handleSaveScenario}
                 sx={{
-                  mt: 2,
-                  backgroundColor: COLORS.cardBackground,
-                  borderColor: COLORS.cardBorder,
-                  borderRadius: 2,
+                  backgroundColor: COLORS.buttonSecondary,
+                  "&:hover": { backgroundColor: COLORS.buttonSecondaryHover },
+                  textTransform: "none",
+                  fontWeight: 600,
                 }}
               >
-                <CardContent>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 1 }}>
-                    <Typography variant="subtitle2" sx={{ color: COLORS.textPrimary, fontWeight: 600 }}>
-                      Final Balances at Retirement
-                    </Typography>
-                    <HelpTooltip
-                      title={helpContent.results.finalBalance.title}
-                      description={helpContent.results.finalBalance.description}
-                    />
-                  </Box>
-                  <Stack
-                    direction={{ xs: "column", sm: "row" }}
-                    spacing={2.5}
-                    sx={{ mt: 1.5 }}
-                  >
-                    <Box>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
-                        <Typography variant="body2" sx={{ color: COLORS.textSecondary, fontWeight: 600 }}>
-                          Real (Today's $)
-                        </Typography>
-                        <HelpTooltip
-                          title={helpContent.general.realDollars.title}
-                          description={helpContent.general.realDollars.description}
-                          size="small"
-                        />
-                      </Box>
-                      <Typography variant="h5" sx={{ color: COLORS.textPrimary, fontWeight: 700 }}>
-                        $
-                        {result.realBalances
-                          .at(-1)
-                          ?.toLocaleString(undefined, { maximumFractionDigits: 0 }) ?? "0"}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{ display: "block", mt: 0.5, color: COLORS.textTertiary }}
-                      >
-                        Reflects today's buying power with your inflation assumption.
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
-                        <Typography variant="body2" sx={{ color: COLORS.textSecondary, fontWeight: 600 }}>
-                          Nominal (Future $)
-                        </Typography>
-                        <HelpTooltip
-                          title={helpContent.general.nominalDollars.title}
-                          description={helpContent.general.nominalDollars.description}
-                          size="small"
-                        />
-                      </Box>
-                      <Typography variant="h6" sx={{ color: COLORS.textPrimary }}>
-                        $
-                        {result.nominalBalances
-                          .at(-1)
-                          ?.toLocaleString(undefined, { maximumFractionDigits: 0 }) ?? "0"}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{ display: "block", mt: 0.5, color: COLORS.textTertiary }}
-                      >
-                        Future dollars before adjusting for inflation.
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </Card>
-
-              <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-                <Button
-                  variant="contained"
-                  startIcon={<SaveIcon />}
-                  onClick={handleSaveScenario}
-                  sx={{
-                    backgroundColor: COLORS.buttonSecondary,
-                    "&:hover": { backgroundColor: COLORS.buttonSecondaryHover },
-                    textTransform: "none",
-                    fontWeight: 600,
-                  }}
-                >
-                  Save as Baseline
-                </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<CompareArrowsIcon />}
-                  onClick={handleOpenWhatIf}
-                  sx={{
-                    borderColor: COLORS.buttonPrimary,
-                    color: COLORS.buttonPrimary,
-                    "&:hover": {
-                      borderColor: COLORS.buttonPrimaryHover,
-                      backgroundColor: `${COLORS.buttonPrimary}15`,
-                    },
-                    textTransform: "none",
-                    fontWeight: 600,
-                  }}
-                >
-                  Open What-If Simulator
-                </Button>
-              </Stack>
-            </>
-          )}
+                Save as Baseline
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<CompareArrowsIcon />}
+                onClick={handleOpenWhatIf}
+                sx={{
+                  borderColor: COLORS.buttonPrimary,
+                  color: COLORS.buttonPrimary,
+                  "&:hover": {
+                    borderColor: COLORS.buttonPrimaryHover,
+                    backgroundColor: `${COLORS.buttonPrimary}15`,
+                  },
+                  textTransform: "none",
+                  fontWeight: 600,
+                }}
+              >
+                Open What-If Simulator
+              </Button>
+            </Stack>
+          </Box>
+        )}
       </Container>
 
       <Snackbar
