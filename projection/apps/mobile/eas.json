@@ -29,7 +29,7 @@
         "versionCode": 1
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://your-app.up.railway.app"
+        "EXPO_PUBLIC_API_URL": "https://nestly-api.up.railway.app"
       }
     }
   },
