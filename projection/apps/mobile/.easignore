@@ -1,7 +1,6 @@
-# Include monorepo root for workspace resolution
-!../../package.json
-!../../pnpm-workspace.yaml
-!../../pnpm-lock.yaml
+# Exclude monorepo workspace files to prevent auto-detection
+../../pnpm-workspace.yaml
+../../package.json
 
 # Exclude other apps
 ../../apps/web/**

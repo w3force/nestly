@@ -30,7 +30,7 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://nestly-api.up.railway.app"
       },
-      "prebuildCommand": "corepack enable && corepack prepare pnpm@8.15.0 --activate"
+      "prebuildCommand": "cd ../../packages/core && pnpm install && pnpm build && cd ../../packages/shared && pnpm install && pnpm build && cd ../../packages/api-client && pnpm install && pnpm build && cd ../../apps/mobile && pnpm install --no-frozen-lockfile"
     },
     "production": {
       "extends": "base",
