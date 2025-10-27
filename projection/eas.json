@@ -1,67 +1,13 @@
-{{{
-
+{
   "cli": {
-
-    "version": ">= 5.0.0",  "cli": {  "cli": {
-
+    "version": ">= 5.0.0",
     "appVersionSource": "remote"
-
-  },    "version": ">= 5.0.0",    "version": ">= 16.24.1",
-
+  },
   "build": {
-
-    "base": {    "appVersionSource": "remote"    "appVersionSource": "remote"
-
+    "base": {
       "node": "20.18.0",
-
-      "pnpm": "8.15.0"  },  },
-
+      "pnpm": "8.15.0"
     },
-
-    "preview": {  "build": {  "build": {
-
-      "extends": "base",
-
-      "distribution": "internal",    "base": {    "development": {
-
-      "android": {
-
-        "buildType": "apk"      "node": "20.18.0",      "developmentClient": true,
-
-      },
-
-      "env": {      "pnpm": "8.15.0",      "distribution": "internal"
-
-        "EXPO_PUBLIC_API_URL": "https://nestly-api.up.railway.app"
-
-      }      "env": {    },
-
-    }
-
-  }        "COREPACK_ENABLE_STRICT": "0"    "preview": {
-
-}
-
-      }      "distribution": "internal"
-
-    },    },
-
-    "development": {    "production": {
-
-      "extends": "base",      "autoIncrement": true
-
-      "developmentClient": true,    }
-
-      "distribution": "internal",  },
-
-      "ios": {  "submit": {
-
-        "simulator": true    "production": {}
-
-      }  }
-
-    },}
-
     "preview": {
       "extends": "base",
       "distribution": "internal",
@@ -70,25 +16,6 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://nestly-api.up.railway.app"
-      }
-    },
-    "production": {
-      "extends": "base",
-      "env": {
-        "EXPO_PUBLIC_API_URL": "https://nestly-api.up.railway.app"
-      }
-    }
-  },
-  "submit": {
-    "production": {
-      "ios": {
-        "appleId": "your-apple-id@example.com",
-        "ascAppId": "YOUR_ASC_APP_ID",
-        "appleTeamId": "YOUR_APPLE_TEAM_ID"
-      },
-      "android": {
-        "serviceAccountKeyPath": "./google-service-account.json",
-        "track": "internal"
       }
     }
   }
