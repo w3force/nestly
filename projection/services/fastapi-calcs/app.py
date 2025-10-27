@@ -40,9 +40,11 @@ async def rate_limit_middleware(request: Request, call_next):
         return Response("Rate limit exceeded. Try again later.", status_code=status.HTTP_429_TOO_MANY_REQUESTS)
     _buckets[ip] = [bucket - 1, last]
     return await call_next(request)
+
+@app.get("/health")
 @app.get("/healthz")
-def healthz():
-    return {"ok": True}
+def health_check():
+    return {"status": "healthy", "ok": True}
 
 # Add Monte Carlo router
 app.include_router(monte_carlo_router)
