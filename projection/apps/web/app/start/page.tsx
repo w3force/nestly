@@ -458,7 +458,7 @@ export default function StartPage() {
   const heroFooterRaw =
     landingScreen.sections.find((section) => section.id === "hero")?.metadata?.footerNote || "Free forever • No credit card required";
   const quickStartBadgeLabel = heroFooterRaw
-    ? heroFooterRaw.split("•")[0]?.trim().replace(/\b\w/g, (char) => char.toUpperCase())
+    ? heroFooterRaw.split("•")[0]?.trim().replace(/\b\w/g, (char: string) => char.toUpperCase())
     : "Free Forever";
   const quickStartBadgeDescription =
     "We never send personal data to servers — calculations run entirely on your device.";
