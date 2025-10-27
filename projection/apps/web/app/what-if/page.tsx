@@ -98,10 +98,7 @@ const ScenarioButton = styled(Button, {
   flexShrink: fixedWidth ? 0 : undefined,
   borderWidth: 1.5,
   borderStyle: 'solid',
-  borderColor: alpha(theme.palette.primary.main, 0.28),
-  color: '#264336',
   backgroundColor: 'transparent',
-  boxShadow: 'none',
   transition: 'all 0.2s ease',
   minHeight: 36,
   ...(active
@@ -112,6 +109,9 @@ const ScenarioButton = styled(Button, {
         boxShadow: '0 8px 20px rgba(74, 189, 172, 0.25)',
       }
     : {
+        color: '#264336',
+        borderColor: alpha(theme.palette.primary.main, 0.28),
+        boxShadow: 'none',
         '&:hover': {
           backgroundColor: alpha(theme.palette.primary.main, 0.1),
           borderColor: alpha(theme.palette.primary.main, 0.4),
@@ -1230,7 +1230,7 @@ const WhatIfPlanner: React.FC = () => {
                       columnDefs={columnDefs}
                       defaultColDef={defaultColDef}
                       getRowStyle={(params) =>
-                        params.node.rowIndex % 2 === 0
+                        params.node.rowIndex !== null && params.node.rowIndex % 2 === 0
                           ? { backgroundColor: theme.palette.mode === "light" ? "rgba(48,64,58,0.03)" : "rgba(48,64,58,0.12)" }
                           : undefined
                       }

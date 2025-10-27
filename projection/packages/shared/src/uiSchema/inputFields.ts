@@ -122,10 +122,8 @@ export const SCENARIO_NAME_FIELD: InputFieldDefinition = {
   defaultValue: 'What-If Scenario',
   constraints: {
     min: 0,
-    max: 0,
+    max: 100,
     step: 1,
-    format: (v) => String(v),
-    parse: (v) => v,
   },
   renderHints: {
     platform: 'both',
