@@ -2,6 +2,18 @@
   "name": "projection",
   "private": true,
   "version": "0.1.0",
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:web": "pnpm --filter web dev",
+    "dev:mobile": "pnpm --filter mobile start",
+    "build": "turbo run build",
+    "build:web": "pnpm --filter web build",
+    "deploy:web": "cd apps/web && vercel --prod",
+    "deploy:railway": "echo 'Deploy via Railway dashboard or CLI'",
+    "build:ios": "cd apps/mobile && eas build --platform ios --profile preview",
+    "build:android": "cd apps/mobile && eas build --platform android --profile preview",
+    "build:mobile": "cd apps/mobile && eas build --platform all --profile preview"
+  },
   "workspaces": [
     "apps/web",
     "apps/mobile",
