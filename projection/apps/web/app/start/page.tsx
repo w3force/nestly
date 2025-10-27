@@ -78,7 +78,7 @@ function resolveRoute(id?: string): string {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === "object" && !Array.isArray(value);
 
-export default function StartPage(): JSX.Element {
+export default function StartPage() {
   const { setUser } = useUser();
   const heroSectionBase =
     landingScreen.sections.find((section) => section.id === "hero") ?? landingScreen.sections[0];
