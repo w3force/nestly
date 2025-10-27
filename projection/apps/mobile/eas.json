@@ -6,7 +6,11 @@
   "build": {
     "base": {
       "node": "20.18.0",
-      "pnpm": "8.15.0"
+      "pnpm": "8.15.0",
+      "env": {
+        "YARN_ENABLE_IMMUTABLE_INSTALLS": "false",
+        "SKIP_YARN_CACHING": "1"
+      }
     },
     "development": {
       "extends": "base",
@@ -20,11 +24,14 @@
       "extends": "base",
       "distribution": "internal",
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "image": "latest"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://nestly-api.up.railway.app"
-      }
+        "EXPO_PUBLIC_API_URL": "https://nestly-api.up.railway.app",
+        "EAS_BUILD_WORKINGDIR": "../../"
+      },
+      "prebuildCommand": "cd apps/mobile && pnpm install"
     },
     "production": {
       "extends": "base",

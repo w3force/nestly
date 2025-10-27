@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "73b76943-59ed-4ff3-a603-bf65213d67f8"
+      }
+    },
+    "android": {
+      "package": "com.w3force.nestlymonorepo"
+    }
+  }
+}
