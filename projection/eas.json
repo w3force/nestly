@@ -17,7 +17,8 @@
       },
       "channel": "preview",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://nestly-api.up.railway.app"
+        "EXPO_PUBLIC_API_URL": "https://nestly-api.up.railway.app",
+        "EAS_BUILD_NPM_CACHE_URL": "false"
       }
     },
     "production": {
