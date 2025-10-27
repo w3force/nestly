@@ -6,11 +6,7 @@
   "build": {
     "base": {
       "node": "20.18.0",
-      "pnpm": "8.15.0",
-      "env": {
-        "EXPO_UNSTABLE_CORE_AUTOLINKING_ENABLED": "1",
-        "EAS_BUILD_WORKINGDIR": "apps/mobile"
-      }
+      "pnpm": "8.15.0"
     },
     "development": {
       "extends": "base",

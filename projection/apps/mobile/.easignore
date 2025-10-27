@@ -1,0 +1,19 @@
+# Include monorepo root for workspace resolution
+!../../package.json
+!../../pnpm-workspace.yaml
+!../../pnpm-lock.yaml
+
+# Exclude other apps
+../../apps/web/**
+
+# Exclude build outputs from other packages
+../../packages/**/dist
+../../packages/**/node_modules
+
+# Standard ignores
+node_modules/
+.expo/
+.expo-shared/
+dist/
+*.log
+.DS_Store
