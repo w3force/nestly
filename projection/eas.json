@@ -8,7 +8,8 @@
       "node": "20.18.0",
       "pnpm": "8.15.0",
       "env": {
-        "EXPO_UNSTABLE_CORE_AUTOLINKING_ENABLED": "1"
+        "EXPO_UNSTABLE_CORE_AUTOLINKING_ENABLED": "1",
+        "EAS_BUILD_WORKINGDIR": "apps/mobile"
       }
     },
     "development": {
@@ -27,8 +28,7 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://nestly-api.up.railway.app"
-      },
-      "prebuildCommand": "cd ../.. && pnpm install --filter mobile --no-frozen-lockfile"
+      }
     },
     "production": {
       "extends": "base",
