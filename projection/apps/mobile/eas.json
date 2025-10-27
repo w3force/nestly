@@ -12,22 +12,11 @@
     },
     "preview": {
       "distribution": "internal",
-      "ios": {
-        "simulator": false,
-        "buildNumber": "1"
-      },
       "android": {
-        "buildType": "apk",
-        "versionCode": 1
+        "buildType": "apk"
       }
     },
     "production": {
-      "ios": {
-        "buildNumber": "1"
-      },
-      "android": {
-        "versionCode": 1
-      },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://nestly-api.up.railway.app"
       }

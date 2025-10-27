@@ -41,13 +41,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-asset',
     'expo-font'
   ],
-  extra: {
-    eas: {
-      projectId: 'YOUR_EAS_PROJECT_ID'
-    }
-  },
   updates: {
-    url: 'https://u.expo.dev/YOUR_EAS_PROJECT_ID'
+    fallbackToCacheTimeout: 0
   },
   runtimeVersion: {
     policy: 'sdkVersion'

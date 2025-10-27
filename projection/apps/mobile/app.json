@@ -19,7 +19,7 @@
     "assetBundlePatterns": [
       "**/*"
     ],
-    "ios": {  
+    "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.w3force.nestly",
       "icon": "./assets/icon3.png"
@@ -38,6 +38,12 @@
     "plugins": [
       "expo-asset",
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "208a551f-c9c2-43da-ad5a-8a51790f5128"
+      }
+    },
+    "owner": "w3force"
   }
 }
