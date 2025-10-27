@@ -1,24 +1,46 @@
-{{
+{{{
 
-  "cli": {  "cli": {
+  "cli": {
 
-    "version": ">= 5.0.0",    "version": ">= 16.24.1",
+    "version": ">= 5.0.0",  "cli": {  "cli": {
 
-    "appVersionSource": "remote"    "appVersionSource": "remote"
+    "appVersionSource": "remote"
 
-  },  },
+  },    "version": ">= 5.0.0",    "version": ">= 16.24.1",
 
-  "build": {  "build": {
+  "build": {
 
-    "base": {    "development": {
+    "base": {    "appVersionSource": "remote"    "appVersionSource": "remote"
 
-      "node": "20.18.0",      "developmentClient": true,
+      "node": "20.18.0",
 
-      "pnpm": "8.15.0",      "distribution": "internal"
+      "pnpm": "8.15.0"  },  },
 
-      "env": {    },
+    },
 
-        "COREPACK_ENABLE_STRICT": "0"    "preview": {
+    "preview": {  "build": {  "build": {
+
+      "extends": "base",
+
+      "distribution": "internal",    "base": {    "development": {
+
+      "android": {
+
+        "buildType": "apk"      "node": "20.18.0",      "developmentClient": true,
+
+      },
+
+      "env": {      "pnpm": "8.15.0",      "distribution": "internal"
+
+        "EXPO_PUBLIC_API_URL": "https://nestly-api.up.railway.app"
+
+      }      "env": {    },
+
+    }
+
+  }        "COREPACK_ENABLE_STRICT": "0"    "preview": {
+
+}
 
       }      "distribution": "internal"
 
