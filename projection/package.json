@@ -15,14 +15,6 @@
     "build:android": "cd apps/mobile && eas build --platform android --profile preview",
     "build:mobile": "cd apps/mobile && eas build --platform all --profile preview"
   },
-  "workspaces": [
-    "apps/web",
-    "apps/mobile",
-    "packages/core",
-    "packages/ui",
-    "packages/api-client",
-    "services/fastapi-calcs"
-  ],
   "devDependencies": {
     "@types/react": "^19.2.2",
     "openapi-typescript": "^6.7.6",
