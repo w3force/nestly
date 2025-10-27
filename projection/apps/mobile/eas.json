@@ -24,14 +24,11 @@
       "extends": "base",
       "distribution": "internal",
       "android": {
-        "buildType": "apk",
-        "image": "latest"
+        "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://nestly-api.up.railway.app",
-        "EAS_BUILD_WORKINGDIR": "../../"
-      },
-      "prebuildCommand": "cd apps/mobile && pnpm install"
+        "EXPO_PUBLIC_API_URL": "https://nestly-api.up.railway.app"
+      }
     },
     "production": {
       "extends": "base",
