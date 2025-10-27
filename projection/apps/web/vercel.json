@@ -1,11 +1,11 @@
 {
-  "buildCommand": "cd ../.. && pnpm install && pnpm --filter web build",
+  "buildCommand": "pnpm --filter web build",
   "installCommand": "pnpm install",
   "framework": "nextjs",
   "redirects": [
     {
       "source": "/api/:path*",
-      "destination": "https://your-app.up.railway.app/api/:path*",
+      "destination": "https://nestly-api.up.railway.app/api/:path*",
       "permanent": false
     }
   ],
