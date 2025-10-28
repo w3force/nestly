@@ -239,17 +239,13 @@ export const ContributionSlider: React.FC<ContributionSliderProps> = ({
               // Clamp positioning to prevent overflow
               const isAtStart = percent < 10;
               const isAtEnd = percent > 90;
-              const leftPosition = isAtStart ? '0%' : isAtEnd ? '100%' : `${percent}%`;
-              const transformX = isAtStart ? '0%' : isAtEnd ? '-100%' : '-50%';
               
               return (
                 <Box
                   key={`contribution-indicator-${indicator.label}-${indicator.value}`}
                   sx={{
                     position: 'absolute',
-                    left: leftPosition,
-                    transform: `translateX(${transformX})`,
-                    textAlign: isAtStart ? 'left' : isAtEnd ? 'right' : 'center',
+                    left: `${percent}%`,
                     color: 'rgba(48, 64, 58, 0.8)',
                   }}
                 >
@@ -264,11 +260,19 @@ export const ContributionSlider: React.FC<ContributionSliderProps> = ({
                       fontWeight: 600,
                       bgcolor: 'rgba(255,255,255,0.85)',
                       boxShadow: '0 0 4px rgba(0, 0, 0, 0.1)',
-                      transform: 'translateY(-100%)',
                       whiteSpace: 'nowrap',
-                      ...(isAtStart && { left: 0 }),
-                      ...(isAtEnd && { right: 0 }),
-                      ...(!isAtStart && !isAtEnd && { left: '50%', transform: 'translate(-50%, -100%)' }),
+                      ...(isAtStart && { 
+                        left: 0,
+                        transform: 'translateY(-100%)',
+                      }),
+                      ...(isAtEnd && { 
+                        right: 0,
+                        transform: 'translate(0, -100%)',
+                      }),
+                      ...(!isAtStart && !isAtEnd && { 
+                        left: '50%',
+                        transform: 'translate(-50%, -100%)',
+                      }),
                     }}
                   >
                     {indicator.label}
