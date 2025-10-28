@@ -1232,22 +1232,102 @@ const WhatIfPlanner: React.FC = () => {
                   <Typography variant="h6" fontWeight={600} gutterBottom>
                     Year-by-Year Comparison
                   </Typography>
-                  <div
-                    className="ag-theme-quartz"
-                    style={{ height: 360, width: "100%" }}
-                  >
-                    <AgGridReact
-                      rowData={tableData}
-                      columnDefs={columnDefs}
-                      defaultColDef={defaultColDef}
-                      getRowStyle={(params) =>
-                        params.node.rowIndex !== null && params.node.rowIndex % 2 === 0
-                          ? { backgroundColor: theme.palette.mode === "light" ? "rgba(48,64,58,0.03)" : "rgba(48,64,58,0.12)" }
-                          : undefined
-                      }
-                      animateRows
-                    />
-                  </div>
+                  
+                  {/* Mobile Card View */}
+                  <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+                    <Stack spacing={2} sx={{ maxHeight: 400, overflowY: 'auto' }}>
+                      {tableData.map((row, index) => (
+                        <Paper
+                          key={index}
+                          elevation={0}
+                          sx={{
+                            p: 2,
+                            borderRadius: 2,
+                            backgroundColor: index % 2 === 0 
+                              ? 'rgba(48,64,58,0.03)' 
+                              : 'rgba(74, 189, 172, 0.06)',
+                            border: '1px solid',
+                            borderColor: 'rgba(48,64,58,0.1)',
+                          }}
+                        >
+                          <Grid container spacing={1.5}>
+                            <Grid item xs={12}>
+                              <Typography variant="subtitle2" fontWeight={700} color="primary">
+                                Age {row.age}
+                              </Typography>
+                            </Grid>
+                            <Grid item xs={6}>
+                              <Typography variant="caption" color="text.secondary">
+                                Contribution
+                              </Typography>
+                              <Typography variant="body2" fontWeight={600}>
+                                {currencyFormatter(row.contribution ?? 0)}
+                              </Typography>
+                            </Grid>
+                            <Grid item xs={6}>
+                              <Typography variant="caption" color="text.secondary">
+                                Return
+                              </Typography>
+                              <Typography variant="body2" fontWeight={600}>
+                                {currencyFormatter(row.returnAmount ?? 0)}
+                              </Typography>
+                            </Grid>
+                            <Grid item xs={6}>
+                              <Typography variant="caption" color="text.secondary">
+                                Inflation Drag
+                              </Typography>
+                              <Typography variant="body2" fontWeight={600}>
+                                {currencyFormatter(row.inflationDrag ?? 0)}
+                              </Typography>
+                            </Grid>
+                            <Grid item xs={6}>
+                              <Typography variant="caption" color="text.secondary">
+                                End Balance
+                              </Typography>
+                              <Typography variant="body2" fontWeight={600} color="primary">
+                                {currencyFormatter(row.endBalance ?? 0)}
+                              </Typography>
+                            </Grid>
+                            {row.delta !== 0 && (
+                              <Grid item xs={12}>
+                                <Divider sx={{ my: 0.5 }} />
+                                <Typography variant="caption" color="text.secondary">
+                                  Δ vs Baseline
+                                </Typography>
+                                <Typography 
+                                  variant="body2" 
+                                  fontWeight={700}
+                                  color={(row.delta ?? 0) >= 0 ? 'success.main' : 'error.main'}
+                                >
+                                  {currencyFormatter(row.delta ?? 0)}
+                                </Typography>
+                              </Grid>
+                            )}
+                          </Grid>
+                        </Paper>
+                      ))}
+                    </Stack>
+                  </Box>
+
+                  {/* Desktop Grid View */}
+                  <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+                    <div
+                      className="ag-theme-quartz"
+                      style={{ height: 360, width: "100%" }}
+                    >
+                      <AgGridReact
+                        rowData={tableData}
+                        columnDefs={columnDefs}
+                        defaultColDef={defaultColDef}
+                        getRowStyle={(params) =>
+                          params.node.rowIndex !== null && params.node.rowIndex % 2 === 0
+                            ? { backgroundColor: theme.palette.mode === "light" ? "rgba(48,64,58,0.03)" : "rgba(48,64,58,0.12)" }
+                            : undefined
+                        }
+                        animateRows
+                      />
+                    </div>
+                  </Box>
                 </Paper>
               </Stack>
             </Grid>
