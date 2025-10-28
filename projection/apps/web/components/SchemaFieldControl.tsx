@@ -123,6 +123,10 @@ export const SchemaFieldControl: React.FC<SchemaFieldControlProps> = ({
     if (marks && marks.length > 0) {
       sliderSx['& .MuiSlider-markLabel'] = {
         whiteSpace: 'nowrap',
+        textAlign: 'center',
+        lineHeight: 1.2,
+        transform: 'translateX(-50%)',
+        display: { xs: 'none', lg: 'block' },
       };
 
       if (marks.length > 1) {
