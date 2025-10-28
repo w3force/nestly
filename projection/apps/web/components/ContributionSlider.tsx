@@ -236,9 +236,9 @@ export const ContributionSlider: React.FC<ContributionSliderProps> = ({
           >
             {rangeIndicators.map((indicator) => {
               const percent = getPercent(indicator.value);
-              // Clamp positioning to prevent overflow
-              const isAtStart = percent < 10;
-              const isAtEnd = percent > 90;
+              // Clamp positioning to prevent overflow - more aggressive thresholds
+              const isAtStart = percent < 15;
+              const isAtEnd = percent > 85;
               
               return (
                 <Box
@@ -267,7 +267,7 @@ export const ContributionSlider: React.FC<ContributionSliderProps> = ({
                       }),
                       ...(isAtEnd && { 
                         right: 0,
-                        transform: 'translate(0, -100%)',
+                        transform: 'translateY(-100%)',
                       }),
                       ...(!isAtStart && !isAtEnd && { 
                         left: '50%',
