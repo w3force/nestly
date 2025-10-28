@@ -189,7 +189,7 @@ export const ContributionSlider: React.FC<ContributionSliderProps> = ({
         </Box>
       </Box>
 
-      <Box sx={{ position: 'relative', mb: 1.5, pb: 2, px: { xs: 0.5, sm: 1 } }}>
+      <Box sx={{ position: 'relative', mb: 1.5, pb: 2, px: { xs: 0.5, sm: 1 }, mr: { xs: '-40px', sm: '-50px' } }}>
         <Slider
           ref={sliderRef}
           value={localValue}
