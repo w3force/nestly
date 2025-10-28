@@ -5,9 +5,31 @@ import type { components } from './types';
 export type MonteCarloInput = components['schemas']['MonteCarloInput'];
 export type MonteCarloResponse = components['schemas']['MonteCarloResponse'];
 
+// Declare process for environments where it exists
+declare const process: any;
+
+// Get API URL from environment variable or fallback to localhost
+const getApiUrl = (): string => {
+  try {
+    // Check for Next.js public env vars (works in browser and server)
+    if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_API_URL) {
+      return process.env.NEXT_PUBLIC_API_URL;
+    }
+    // Check for Expo public env vars (React Native)
+    if (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) {
+      return process.env.EXPO_PUBLIC_API_URL;
+    }
+  } catch (e) {
+    // process not available
+  }
+  // Fallback to localhost for development
+  return 'http://localhost:8000';
+};
+
 // Helper to call /monte-carlo
 async function fetchMonteCarlo(input: MonteCarloInput): Promise<MonteCarloResponse> {
-  const res = await fetch('http://localhost:8000/monte-carlo', {
+  const apiUrl = getApiUrl();
+  const res = await fetch(`${apiUrl}/monte-carlo`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
@@ -18,7 +40,8 @@ async function fetchMonteCarlo(input: MonteCarloInput): Promise<MonteCarloRespon
 
 // Helper to call /monte-carlo/async (if implemented)
 async function fetchMonteCarloAsync(input: MonteCarloInput): Promise<MonteCarloResponse> {
-  const res = await fetch('http://localhost:8000/monte-carlo/async', {
+  const apiUrl = getApiUrl();
+  const res = await fetch(`${apiUrl}/monte-carlo/async`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),

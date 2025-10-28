@@ -114,7 +114,8 @@ export default function CalculatorPage() {
       inflation: number;
     }) => {
       setLoading(true);
-      const res = await fetch("http://localhost:8000/calculate", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const res = await fetch(`${apiUrl}/calculate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
