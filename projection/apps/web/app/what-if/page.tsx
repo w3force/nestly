@@ -1233,27 +1233,42 @@ const WhatIfPlanner: React.FC = () => {
                 </Paper>
 
                 <Paper elevation={1} sx={{ p: 3, borderRadius: 3 }}>
-                  <Typography variant="h6" fontWeight={600} gutterBottom>
+                  {/* Desktop Title */}
+                  <Typography 
+                    variant="h6" 
+                    fontWeight={600} 
+                    gutterBottom
+                    sx={{ display: { xs: 'none', md: 'block' } }}
+                  >
                     Year-by-Year Comparison
                   </Typography>
-                  
-                  {/* Mobile Card View */}
-                  <Box sx={{ display: { xs: 'block', md: 'none' } }}>
-                    {/* Quick Age Selector */}
+
+                  {/* Mobile Title with Age Selector */}
+                  <Box 
+                    sx={{ 
+                      display: { xs: 'flex', md: 'none' },
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 2,
+                      mb: 2,
+                    }}
+                  >
+                    <Typography variant="h6" fontWeight={600}>
+                      Year-by-Year
+                    </Typography>
                     <FormControl 
                       size="small" 
                       sx={{ 
-                        mb: 2, 
-                        minWidth: 200,
+                        minWidth: 130,
                         '& .MuiOutlinedInput-root': {
                           borderRadius: 2,
                           backgroundColor: 'rgba(74, 189, 172, 0.08)',
                         }
                       }}
                     >
-                      <InputLabel>Jump to Age</InputLabel>
+                      <InputLabel>Jump to</InputLabel>
                       <Select
-                        label="Jump to Age"
+                        label="Jump to"
                         defaultValue=""
                         onChange={(e) => {
                           const age = e.target.value;
@@ -1270,7 +1285,10 @@ const WhatIfPlanner: React.FC = () => {
                         ))}
                       </Select>
                     </FormControl>
-
+                  </Box>
+                  
+                  {/* Mobile Card View */}
+                  <Box sx={{ display: { xs: 'block', md: 'none' } }}>
                     <Stack spacing={2} sx={{ maxHeight: 400, overflowY: 'auto' }}>
                       {tableData.map((row, index) => (
                         <Paper
