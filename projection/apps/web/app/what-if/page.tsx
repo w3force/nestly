@@ -25,6 +25,10 @@ import {
   Switch,
   FormControlLabel,
   useMediaQuery,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import AddIcon from "@mui/icons-material/Add";
@@ -1235,10 +1239,43 @@ const WhatIfPlanner: React.FC = () => {
                   
                   {/* Mobile Card View */}
                   <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+                    {/* Quick Age Selector */}
+                    <FormControl 
+                      size="small" 
+                      sx={{ 
+                        mb: 2, 
+                        minWidth: 200,
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 2,
+                          backgroundColor: 'rgba(74, 189, 172, 0.08)',
+                        }
+                      }}
+                    >
+                      <InputLabel>Jump to Age</InputLabel>
+                      <Select
+                        label="Jump to Age"
+                        defaultValue=""
+                        onChange={(e) => {
+                          const age = e.target.value;
+                          const element = document.getElementById(`age-card-${age}`);
+                          if (element) {
+                            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }
+                        }}
+                      >
+                        {tableData.map((row) => (
+                          <MenuItem key={row.age} value={row.age}>
+                            Age {row.age}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
                     <Stack spacing={2} sx={{ maxHeight: 400, overflowY: 'auto' }}>
                       {tableData.map((row, index) => (
                         <Paper
                           key={index}
+                          id={`age-card-${row.age}`}
                           elevation={0}
                           sx={{
                             p: 2,
