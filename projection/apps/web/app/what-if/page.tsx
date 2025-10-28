@@ -800,18 +800,22 @@ const WhatIfPlanner: React.FC = () => {
         >
           <Toolbar
             sx={{
-              gap: 2,
-              flexWrap: { xs: "wrap", md: "nowrap" },
+              gap: { xs: 1.5, md: 2 },
+              flexWrap: "wrap",
               alignItems: "center",
+              flexDirection: { xs: 'column', md: 'row' },
+              py: { xs: 1.5, md: 2 },
             }}
           >
+            {/* Mobile: First Row - Scenarios */}
             <Box
               sx={{
-                display: "flex",
-                alignItems: "center",
-                flexGrow: 1,
+                display: 'flex',
+                width: { xs: '100%', md: 'auto' },
+                flexGrow: { xs: 0, md: 1 },
                 minWidth: 0,
                 gap: 1.2,
+                order: { xs: 1, md: 1 },
               }}
             >
               <ScenarioButton
@@ -945,123 +949,112 @@ const WhatIfPlanner: React.FC = () => {
               </Box>
             </Box>
 
-            {showDesktopNavigation ? (
-              <IconButton
-                aria-label="Add scenario"
-                color="primary"
-                onClick={handleAddScenario}
-                sx={{
-                  border: "1.5px solid",
-                  borderColor: alpha(theme.palette.primary.main, 0.4),
-                  borderRadius: "50%",
-                  width: 38,
-                  height: 38,
-                  backgroundColor: "rgba(74, 189, 172, 0.08)",
-                  "&:hover": {
-                    backgroundColor: "rgba(74, 189, 172, 0.16)",
-                  },
+            {/* Add Scenario Button - Icon only on mobile, with text on desktop */}
+            <IconButton
+              aria-label="Add scenario"
+              color="primary"
+              onClick={handleAddScenario}
+              sx={{
+                order: { xs: 1, md: 2 },
+                border: "1.5px solid",
+                borderColor: alpha(theme.palette.primary.main, 0.4),
+                borderRadius: "50%",
+                width: 38,
+                height: 38,
+                flexShrink: 0,
+                backgroundColor: "rgba(74, 189, 172, 0.08)",
+                "&:hover": {
+                  backgroundColor: "rgba(74, 189, 172, 0.16)",
+                },
+              }}
+            >
+              <AddIcon fontSize="small" />
+            </IconButton>
+
+            {/* Mobile: Second Row - Controls */}
+            <Box
+              sx={{
+                display: 'flex',
+                width: { xs: '100%', md: 'auto' },
+                gap: 1.2,
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                order: { xs: 2, md: 3 },
+              }}
+            >
+              <ViewToggle
+                value={viewMode}
+                exclusive
+                onChange={(_, value) => value && setViewMode(value)}
+                size="small"
+                sx={{ flexShrink: 0 }}
+              >
+                <ToggleButton value="balance">Balance</ToggleButton>
+                <ToggleButton value="breakdown">Breakdown</ToggleButton>
+              </ViewToggle>
+              <HelpTooltip
+                title="View Modes"
+                description="Balance plots the total projected account value over time. Breakdown splits the projection into contributions, growth, and inflation drag for deeper context."
+                size="small"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    size="small"
+                    color="primary"
+                    checked={showAllScenarios}
+                    onChange={(_, checked) => setShowAllScenarios(checked)}
+                    disabled={viewMode !== "balance"}
+                  />
+                }
+                sx={{ ml: 1, flexShrink: 0 }}
+                labelPlacement="start"
+                label={<Typography variant="body2">Show All</Typography>}
+              />
+              <Stack
+                direction="row"
+                spacing={1.2}
+                sx={{ 
+                  ml: { xs: 0, md: 1 }, 
+                  flexShrink: 0,
+                  display: { xs: 'none', sm: 'flex' },
                 }}
+                alignItems="center"
+                useFlexGap
               >
-                <AddIcon fontSize="small" />
-              </IconButton>
-            ) : (
-              <Button
-                variant="outlined"
-                startIcon={<AddIcon />}
-                onClick={handleAddScenario}
-                sx={[
-                  (theme) => ({
-                    borderRadius: 999,
-                    textTransform: "none",
-                    fontWeight: 600,
-                    padding: "6px 18px",
-                    borderWidth: 1.5,
-                    borderColor: alpha(theme.palette.primary.main, 0.4),
-                    color: theme.palette.primary.main,
-                    transition: "all 0.2s ease",
-                    whiteSpace: "nowrap",
-                  }),
-                  {
-                    "&:hover": {
-                      backgroundColor: "rgba(74, 189, 172, 0.1)",
-                      borderColor: "rgba(74, 189, 172, 0.5)",
-                    },
-                  },
-                ]}
-              >
-                Add Scenario
-              </Button>
-            )}
-            <ViewToggle
-              value={viewMode}
-              exclusive
-              onChange={(_, value) => value && setViewMode(value)}
-              size="small"
-              sx={{ flexShrink: 0 }}
-            >
-              <ToggleButton value="balance">Balance</ToggleButton>
-              <ToggleButton value="breakdown">Breakdown</ToggleButton>
-            </ViewToggle>
-            <HelpTooltip
-              title="View Modes"
-              description="Balance plots the total projected account value over time. Breakdown splits the projection into contributions, growth, and inflation drag for deeper context."
-              size="small"
-            />
-            <FormControlLabel
-              control={
-                <Switch
-                  size="small"
-                  color="primary"
-                  checked={showAllScenarios}
-                  onChange={(_, checked) => setShowAllScenarios(checked)}
-                  disabled={viewMode !== "balance"}
-                />
-              }
-              sx={{ ml: 1, flexShrink: 0 }}
-              labelPlacement="start"
-              label={<Typography variant="body2">Show All</Typography>}
-            />
-            <Stack
-              direction="row"
-              spacing={1.2}
-              sx={{ ml: { xs: 0, md: 1 }, flexShrink: 0 }}
-              alignItems="center"
-              useFlexGap
-            >
-              <Button
-                variant="contained"
-                startIcon={<ContentCopyIcon />}
-                onClick={handleCloneScenario}
-                disabled={activeIndex === 0}
-                sx={[
-                  (theme) => ({
-                    borderRadius: 999,
-                    textTransform: "none",
-                    fontWeight: 600,
-                    padding: "6px 20px",
-                    background: "linear-gradient(135deg, #4ABDAC, #2F8F7C)",
-                    boxShadow: "0 10px 24px rgba(74, 189, 172, 0.25)",
-                  }),
-                  {
-                    "&:hover": {
-                      background: "linear-gradient(135deg, #3CAFA0, #2A7D6B)",
-                      boxShadow: "0 12px 26px rgba(74, 189, 172, 0.3)",
-                    },
-                    "&.Mui-disabled": {
+                <Button
+                  variant="contained"
+                  startIcon={<ContentCopyIcon />}
+                  onClick={handleCloneScenario}
+                  disabled={activeIndex === 0}
+                  sx={[
+                    (theme) => ({
+                      borderRadius: 999,
+                      textTransform: "none",
+                      fontWeight: 600,
+                      padding: "6px 20px",
+                      background: "linear-gradient(135deg, #4ABDAC, #2F8F7C)",
+                      boxShadow: "0 10px 24px rgba(74, 189, 172, 0.25)",
+                    }),
+                    {
+                      "&:hover": {
+                        background: "linear-gradient(135deg, #3CAFA0, #2A7D6B)",
+                        boxShadow: "0 12px 26px rgba(74, 189, 172, 0.3)",
+                      },
+                      "&.Mui-disabled": {
                       background: "rgba(74, 189, 172, 0.15)",
                       color: "rgba(38, 67, 54, 0.45)",
                       boxShadow: "none",
                     },
                   },
                 ]}
-              >
+                >
                 Clone
               </Button>
             </Stack>
+            </Box>
           </Toolbar>
-        </AppBar>
-
-        <Container
+        </AppBar>        <Container
           maxWidth="xl"
           sx={{
             pt: { xs: 2.5, md: 4 },
@@ -1075,9 +1068,10 @@ const WhatIfPlanner: React.FC = () => {
               py: { xs: 2.5, md: 3 },
               borderRadius: 3,
               display: "flex",
-              flexDirection: { xs: "column", md: "row" },
+              flexDirection: "row",
               gap: { xs: 2, md: 3 },
-              alignItems: { xs: "flex-start", md: "center" },
+              alignItems: "center",
+              flexWrap: { xs: "wrap", md: "nowrap" },
               background: "linear-gradient(135deg, #E9F7EF 0%, #D9F1E6 100%)",
               boxShadow: "0 16px 32px rgba(38, 67, 54, 0.08)",
             }}
@@ -1098,7 +1092,7 @@ const WhatIfPlanner: React.FC = () => {
                 sx={{ fontSize: { xs: 28, md: 34 }, color: "#2E7D32" }}
               />
             </Box>
-            <Box>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography
                 variant="h4"
                 sx={{
