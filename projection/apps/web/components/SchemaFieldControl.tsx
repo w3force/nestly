@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import {
   Stack,
   Typography,
@@ -6,6 +6,7 @@ import {
   TextField,
   Chip,
   InputAdornment,
+  Box,
 } from "@mui/material";
 import {
   InputFieldDefinition,
@@ -61,9 +62,26 @@ export const SchemaFieldControl: React.FC<SchemaFieldControlProps> = ({
   formState,
 }) => {
   const help = useMemo(() => resolveHelp(field), [field]);
+  const [localValue, setLocalValue] = useState(Number(value));
+
+  // Update local value when prop changes
+  React.useEffect(() => {
+    setLocalValue(Number(value));
+  }, [value]);
+
+  // Optimized change handlers for slider
+  const handleSliderChange = useCallback((_: Event, newValue: number | number[]) => {
+    const resolved = Array.isArray(newValue) ? newValue[0] : newValue;
+    setLocalValue(Number(resolved));
+  }, []);
+
+  const handleSliderChangeCommitted = useCallback((_: Event | React.SyntheticEvent, newValue: number | number[]) => {
+    const resolved = Array.isArray(newValue) ? newValue[0] : newValue;
+    onChange(Number(resolved));
+  }, [onChange]);
 
   if (field.type === "slider") {
-    const numericValue = Number(value);
+    const numericValue = localValue;
     const metadata = getSliderMetadata(field);
     const minValue = typeof field.constraints.conditionalMin === "function"
       ? field.constraints.conditionalMin(formState)
@@ -93,8 +111,23 @@ export const SchemaFieldControl: React.FC<SchemaFieldControlProps> = ({
 
     return (
       <Stack spacing={1} sx={{ mb: 2 }}>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <Typography variant="body2" color="text.secondary">
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            gap: { xs: 0.5, sm: 1 },
+            flexWrap: 'wrap',
+          }}
+        >
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{
+              fontSize: { xs: '0.875rem', sm: '0.875rem' },
+              fontWeight: 600,
+            }}
+          >
             {field.label}: {labelFormatter(numericValue)}
           </Typography>
           {help ? (
@@ -112,16 +145,15 @@ export const SchemaFieldControl: React.FC<SchemaFieldControlProps> = ({
                 backgroundColor: sliderState.badgeColor,
                 color: "#fff",
                 height: 22,
+                fontSize: '0.75rem',
               }}
             />
           ) : null}
-        </Stack>
+        </Box>
         <Slider
           value={numericValue}
-          onChange={(_, newValue) => {
-            const resolved = Array.isArray(newValue) ? newValue[0] : newValue;
-            onChange(Number(resolved));
-          }}
+          onChange={handleSliderChange}
+          onChangeCommitted={handleSliderChangeCommitted}
           min={minValue}
           max={maxValue}
           step={field.constraints.step}
@@ -130,6 +162,12 @@ export const SchemaFieldControl: React.FC<SchemaFieldControlProps> = ({
           valueLabelFormat={(val) => labelFormatter(Number(val))}
           sx={{
             color: sliderState?.trackColor,
+            '& .MuiSlider-track': {
+              transition: 'none',
+            },
+            '& .MuiSlider-thumb': {
+              transition: 'box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms',
+            },
           }}
         />
       </Stack>
