@@ -132,13 +132,15 @@ export default function StartPage() {
 
     return () => (
       <Container 
-        maxWidth="md" 
+        maxWidth="md"
+        disableGutters
         sx={{ 
           position: "relative", 
           zIndex: 2,
           px: { xs: 2, sm: 3, md: 4 },
           mx: 'auto',
           width: '100%',
+          maxWidth: { xs: '100%', sm: '600px', md: '900px' },
         }}
       >
         <Paper
@@ -354,10 +356,12 @@ export default function StartPage() {
       return (
         <Container 
           maxWidth="lg"
+          disableGutters
           sx={{
             px: { xs: 2, sm: 3, md: 4 },
             mx: 'auto',
             width: '100%',
+            maxWidth: { xs: '100%', sm: '600px', md: '900px', lg: '1200px' },
           }}
         >
           <Stack spacing={1.5} sx={{ mb: 3, textAlign: "center" }}>
