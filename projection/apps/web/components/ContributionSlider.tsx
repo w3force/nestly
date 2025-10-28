@@ -189,7 +189,7 @@ export const ContributionSlider: React.FC<ContributionSliderProps> = ({
         </Box>
       </Box>
 
-      <Box sx={{ position: 'relative', mb: 1.5, pb: 2 }}>
+      <Box sx={{ position: 'relative', mb: 1.5, pb: 2, px: { xs: 0.5, sm: 1 } }}>
         <Slider
           ref={sliderRef}
           value={localValue}
@@ -236,14 +236,20 @@ export const ContributionSlider: React.FC<ContributionSliderProps> = ({
           >
             {rangeIndicators.map((indicator) => {
               const percent = getPercent(indicator.value);
+              // Clamp positioning to prevent overflow
+              const isAtStart = percent < 10;
+              const isAtEnd = percent > 90;
+              const leftPosition = isAtStart ? '0%' : isAtEnd ? '100%' : `${percent}%`;
+              const transformX = isAtStart ? '0%' : isAtEnd ? '-100%' : '-50%';
+              
               return (
                 <Box
                   key={`contribution-indicator-${indicator.label}-${indicator.value}`}
                   sx={{
                     position: 'absolute',
-                    left: `calc(${percent}% )`,
-                    transform: 'translateX(-50%)',
-                    textAlign: 'center',
+                    left: leftPosition,
+                    transform: `translateX(${transformX})`,
+                    textAlign: isAtStart ? 'left' : isAtEnd ? 'right' : 'center',
                     color: 'rgba(48, 64, 58, 0.8)',
                   }}
                 >
@@ -254,12 +260,15 @@ export const ContributionSlider: React.FC<ContributionSliderProps> = ({
                       px: 0.6,
                       py: 0.2,
                       borderRadius: 1,
-                      fontSize: '0.65rem',
+                      fontSize: { xs: '0.6rem', sm: '0.65rem' },
                       fontWeight: 600,
                       bgcolor: 'rgba(255,255,255,0.85)',
                       boxShadow: '0 0 4px rgba(0, 0, 0, 0.1)',
                       transform: 'translateY(-100%)',
                       whiteSpace: 'nowrap',
+                      ...(isAtStart && { left: 0 }),
+                      ...(isAtEnd && { right: 0 }),
+                      ...(!isAtStart && !isAtEnd && { left: '50%', transform: 'translate(-50%, -100%)' }),
                     }}
                   >
                     {indicator.label}
