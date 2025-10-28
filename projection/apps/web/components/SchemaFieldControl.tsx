@@ -8,6 +8,7 @@ import {
   InputAdornment,
   Box,
 } from "@mui/material";
+import type { SxProps, Theme } from "@mui/material/styles";
 import {
   InputFieldDefinition,
   getSliderMetadata,
@@ -109,6 +110,34 @@ export const SchemaFieldControl: React.FC<SchemaFieldControlProps> = ({
         ? field.constraints.format
         : (val: number) => `${val}`;
 
+    const sliderSx: Record<string, unknown> = {
+      color: sliderState?.trackColor,
+      '& .MuiSlider-track': {
+        transition: 'none',
+      },
+      '& .MuiSlider-thumb': {
+        transition: 'box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms',
+      },
+    };
+
+    if (marks && marks.length > 0) {
+      sliderSx['& .MuiSlider-markLabel'] = {
+        whiteSpace: 'nowrap',
+      };
+
+      if (marks.length > 1) {
+        sliderSx['& .MuiSlider-markLabel[data-index="0"]'] = {
+          transform: 'translateX(0%)',
+          textAlign: 'left',
+        };
+
+        sliderSx[`& .MuiSlider-markLabel[data-index="${marks.length - 1}"]`] = {
+          transform: 'translateX(-100%)',
+          textAlign: 'right',
+        };
+      }
+    }
+
     return (
       <Stack spacing={1} sx={{ mb: 2 }}>
         <Box
@@ -160,15 +189,7 @@ export const SchemaFieldControl: React.FC<SchemaFieldControlProps> = ({
           marks={marks}
           valueLabelDisplay="auto"
           valueLabelFormat={(val) => labelFormatter(Number(val))}
-          sx={{
-            color: sliderState?.trackColor,
-            '& .MuiSlider-track': {
-              transition: 'none',
-            },
-            '& .MuiSlider-thumb': {
-              transition: 'box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms',
-            },
-          }}
+          sx={sliderSx as SxProps<Theme>}
         />
       </Stack>
     );
