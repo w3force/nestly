@@ -245,7 +245,9 @@ export const ContributionSlider: React.FC<ContributionSliderProps> = ({
                   key={`contribution-indicator-${indicator.label}-${indicator.value}`}
                   sx={{
                     position: 'absolute',
-                    left: `${percent}%`,
+                    ...(isAtStart && { left: '0%' }),
+                    ...(isAtEnd && { right: '0%' }),
+                    ...(!isAtStart && !isAtEnd && { left: `${percent}%` }),
                     color: 'rgba(48, 64, 58, 0.8)',
                   }}
                 >
@@ -261,14 +263,9 @@ export const ContributionSlider: React.FC<ContributionSliderProps> = ({
                       bgcolor: 'rgba(255,255,255,0.85)',
                       boxShadow: '0 0 4px rgba(0, 0, 0, 0.1)',
                       whiteSpace: 'nowrap',
-                      ...(isAtStart && { 
-                        left: 0,
-                        transform: 'translateY(-100%)',
-                      }),
-                      ...(isAtEnd && { 
-                        right: 0,
-                        transform: 'translateY(-100%)',
-                      }),
+                      transform: 'translateY(-100%)',
+                      ...(isAtStart && { left: 0 }),
+                      ...(isAtEnd && { right: 0 }),
                       ...(!isAtStart && !isAtEnd && { 
                         left: '50%',
                         transform: 'translate(-50%, -100%)',
