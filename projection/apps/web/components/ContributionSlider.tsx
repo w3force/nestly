@@ -3,7 +3,7 @@
  * Specialized slider for Annual Contribution with inline IRS limit markers
  */
 
-import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useLayoutEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
   Box,
   Slider,
@@ -52,6 +52,12 @@ export const ContributionSlider: React.FC<ContributionSliderProps> = ({
 }) => {
   const sliderRef = useRef<HTMLSpanElement | null>(null);
   const [trackMetrics, setTrackMetrics] = useState<TrackMetrics | null>(null);
+  const [localValue, setLocalValue] = useState(value);
+
+  // Update local value when prop changes
+  React.useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
 
   const formState = useMemo(() => ({ age }), [age]);
   const sliderMetadata = useMemo(() => getSliderMetadata(field), [field]);
@@ -66,15 +72,25 @@ export const ContributionSlider: React.FC<ContributionSliderProps> = ({
   }, [field, formState]);
   const safeMax = dynamicMax ?? field.constraints.max;
 
-  const sliderState = resolveSliderState(sliderMetadata, {
-    value,
+  const sliderState = useMemo(() => resolveSliderState(sliderMetadata, {
+    value: localValue,
     formState,
     dynamicMax: safeMax,
-  });
+  }), [sliderMetadata, localValue, formState, safeMax]);
+  
   const rangeIndicators = useMemo(
     () => resolveSliderRangeIndicators(sliderMetadata, { formState }),
     [sliderMetadata, formState],
   );
+
+  // Optimized change handlers
+  const handleChange = useCallback((_: Event, newValue: number | number[]) => {
+    setLocalValue(newValue as number);
+  }, []);
+
+  const handleChangeCommitted = useCallback((_: Event | React.SyntheticEvent, newValue: number | number[]) => {
+    onChange(newValue as number);
+  }, [onChange]);
 
   const trackColor =
     sliderState?.trackColor ?? sliderState?.badgeColor ?? '#69B47A';
@@ -133,20 +149,23 @@ export const ContributionSlider: React.FC<ContributionSliderProps> = ({
       <Box
         sx={{
           display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: { xs: 'flex-start', sm: 'center' },
           marginBottom: 1.5,
+          gap: { xs: 0.5, sm: 0 },
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
           <Typography
             sx={{
               fontWeight: 600,
               color: '#30403A',
-              fontSize: '0.95rem',
+              fontSize: { xs: '0.875rem', sm: '0.95rem' },
+              whiteSpace: 'nowrap',
             }}
           >
-            Annual Contribution: {formatCurrency(value)}
+            Annual Contribution: {formatCurrency(localValue)}
           </Typography>
           {help && (
             <HelpTooltip
@@ -173,8 +192,9 @@ export const ContributionSlider: React.FC<ContributionSliderProps> = ({
       <Box sx={{ position: 'relative', mb: 1.5, pb: 2 }}>
         <Slider
           ref={sliderRef}
-          value={value}
-          onChange={(_, newValue) => onChange(newValue as number)}
+          value={localValue}
+          onChange={handleChange}
+          onChangeCommitted={handleChangeCommitted}
           min={0}
           max={safeMax}
           step={500}
@@ -183,6 +203,7 @@ export const ContributionSlider: React.FC<ContributionSliderProps> = ({
             '& .MuiSlider-track': {
               backgroundColor: trackColor,
               height: platformDefaults?.trackHeight ? `${platformDefaults.trackHeight}px` : '8px',
+              transition: 'none',
             },
             '& .MuiSlider-rail': {
               backgroundColor: 'rgba(48, 64, 58, 0.1)',
@@ -194,6 +215,7 @@ export const ContributionSlider: React.FC<ContributionSliderProps> = ({
               backgroundColor: trackColor,
               border: '2px solid #FFFFFF',
               boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+              transition: 'box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms',
               '&:hover': {
                 boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
               },

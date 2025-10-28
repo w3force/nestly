@@ -5,7 +5,7 @@
  * and section-level metadata.sliderStyle
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
   Box,
   Slider,
@@ -86,6 +86,13 @@ export const SliderField: React.FC<SliderFieldProps> = ({
   platformDefaults,
   theme,
 }) => {
+  const [localValue, setLocalValue] = useState(value);
+
+  // Update local value when prop changes
+  React.useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
   // Merge defaults: global theme < platform defaults < section-level styling
   const mergedTrackColor = {
     filled: sliderStyle?.trackColor?.filled || theme?.light?.trackFilledColor || '#69B47A',
@@ -136,7 +143,16 @@ export const SliderField: React.FC<SliderFieldProps> = ({
   };
 
   // Calculate fill percentage for track visual
-  const fillPercentage = ((value - min) / (max - min)) * 100;
+  const fillPercentage = ((localValue - min) / (max - min)) * 100;
+
+  // Optimized change handlers
+  const handleChange = useCallback((_: Event, newValue: number | number[]) => {
+    setLocalValue(newValue as number);
+  }, []);
+
+  const handleChangeCommitted = useCallback((_: Event | React.SyntheticEvent, newValue: number | number[]) => {
+    onChange(newValue as number);
+  }, [onChange]);
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -161,7 +177,7 @@ export const SliderField: React.FC<SliderFieldProps> = ({
               fontSize: '0.875rem',
             }}
           >
-            {formatValue(value)}
+            {formatValue(localValue)}
           </Typography>
         )}
       </Box>
@@ -185,8 +201,9 @@ export const SliderField: React.FC<SliderFieldProps> = ({
         }}
       >
         <Slider
-          value={value}
-          onChange={(_, newValue) => onChange(newValue as number)}
+          value={localValue}
+          onChange={handleChange}
+          onChangeCommitted={handleChangeCommitted}
           min={min}
           max={max}
           step={step}
@@ -199,6 +216,7 @@ export const SliderField: React.FC<SliderFieldProps> = ({
               backgroundColor: mergedTrackColor.filled,
               height: trackHeightPixels,
               border: 'none',
+              transition: 'none',
             },
             '& .MuiSlider-rail': {
               backgroundColor: mergedTrackColor.empty,
@@ -212,6 +230,7 @@ export const SliderField: React.FC<SliderFieldProps> = ({
               backgroundColor: mergedThumbColor,
               border: `${mergedThumbBorderWidth}px solid ${mergedThumbBorder}`,
               boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+              transition: 'box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms',
               '&:hover': {
                 boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)',
               },
@@ -244,7 +263,7 @@ export const SliderField: React.FC<SliderFieldProps> = ({
               fontSize: '0.875rem',
             }}
           >
-            {field.label}: {formatValue(value)}
+            {field.label}: {formatValue(localValue)}
           </Typography>
         </Box>
       )}
