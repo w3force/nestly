@@ -27,7 +27,8 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://nestly-api.up.railway.app"
-      }
+      },
+      "prebuildCommand": "cd ../.. && pnpm install --frozen-lockfile"
     },
     "production": {
       "extends": "base",
