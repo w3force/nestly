@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import { ScrollView, View, StyleSheet, SafeAreaView, Animated } from "react-native";
+import { ScrollView, View, StyleSheet, Animated } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Button,
   Card,
@@ -146,6 +147,7 @@ const styles = StyleSheet.create({
     color: '#3F6B59',
   },
   content: {
+    flexGrow: 1,
     padding: SPACING.lg,
     gap: SPACING.sm,
     paddingBottom: 160,
@@ -686,7 +688,7 @@ const DeterministicTab: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: '#F2FBF5' }]}> 
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: '#F2FBF5' }]} edges={['top', 'left', 'right']}> 
       <Animated.View
         pointerEvents="none"
         style={[
