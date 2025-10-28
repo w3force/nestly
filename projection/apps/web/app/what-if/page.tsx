@@ -947,29 +947,28 @@ const WhatIfPlanner: React.FC = () => {
                   </IconButton>
                 )}
               </Box>
-            </Box>
 
-            {/* Add Scenario Button - Icon only on mobile, with text on desktop */}
-            <IconButton
-              aria-label="Add scenario"
-              color="primary"
-              onClick={handleAddScenario}
-              sx={{
-                order: { xs: 1, md: 2 },
-                border: "1.5px solid",
-                borderColor: alpha(theme.palette.primary.main, 0.4),
-                borderRadius: "50%",
-                width: 38,
-                height: 38,
-                flexShrink: 0,
-                backgroundColor: "rgba(74, 189, 172, 0.08)",
-                "&:hover": {
-                  backgroundColor: "rgba(74, 189, 172, 0.16)",
-                },
-              }}
-            >
-              <AddIcon fontSize="small" />
-            </IconButton>
+              {/* Add Scenario Button - Inline with scenarios */}
+              <IconButton
+                aria-label="Add scenario"
+                color="primary"
+                onClick={handleAddScenario}
+                sx={{
+                  border: "1.5px solid",
+                  borderColor: alpha(theme.palette.primary.main, 0.4),
+                  borderRadius: "50%",
+                  width: 38,
+                  height: 38,
+                  flexShrink: 0,
+                  backgroundColor: "rgba(74, 189, 172, 0.08)",
+                  "&:hover": {
+                    backgroundColor: "rgba(74, 189, 172, 0.16)",
+                  },
+                }}
+              >
+                <AddIcon fontSize="small" />
+              </IconButton>
+            </Box>
 
             {/* Mobile: Second Row - Controls */}
             <Box
@@ -1011,47 +1010,65 @@ const WhatIfPlanner: React.FC = () => {
                 labelPlacement="start"
                 label={<Typography variant="body2">Show All</Typography>}
               />
-              <Stack
-                direction="row"
-                spacing={1.2}
-                sx={{ 
-                  ml: { xs: 0, md: 1 }, 
+              
+              {/* Clone Button - Icon on mobile, button on desktop */}
+              <IconButton
+                aria-label="Clone scenario"
+                onClick={handleCloneScenario}
+                disabled={activeIndex === 0}
+                sx={{
+                  display: { xs: 'flex', sm: 'none' },
+                  border: "1.5px solid",
+                  borderColor: alpha(theme.palette.primary.main, 0.4),
+                  borderRadius: "50%",
+                  width: 38,
+                  height: 38,
                   flexShrink: 0,
-                  display: { xs: 'none', sm: 'flex' },
+                  backgroundColor: "rgba(74, 189, 172, 0.08)",
+                  "&:hover": {
+                    backgroundColor: "rgba(74, 189, 172, 0.16)",
+                  },
+                  "&.Mui-disabled": {
+                    borderColor: "rgba(74, 189, 172, 0.15)",
+                    backgroundColor: "rgba(74, 189, 172, 0.05)",
+                  },
                 }}
-                alignItems="center"
-                useFlexGap
               >
-                <Button
-                  variant="contained"
-                  startIcon={<ContentCopyIcon />}
-                  onClick={handleCloneScenario}
-                  disabled={activeIndex === 0}
-                  sx={[
-                    (theme) => ({
-                      borderRadius: 999,
-                      textTransform: "none",
-                      fontWeight: 600,
-                      padding: "6px 20px",
-                      background: "linear-gradient(135deg, #4ABDAC, #2F8F7C)",
-                      boxShadow: "0 10px 24px rgba(74, 189, 172, 0.25)",
-                    }),
-                    {
-                      "&:hover": {
-                        background: "linear-gradient(135deg, #3CAFA0, #2A7D6B)",
-                        boxShadow: "0 12px 26px rgba(74, 189, 172, 0.3)",
-                      },
-                      "&.Mui-disabled": {
+                <ContentCopyIcon fontSize="small" />
+              </IconButton>
+
+              <Button
+                variant="contained"
+                startIcon={<ContentCopyIcon />}
+                onClick={handleCloneScenario}
+                disabled={activeIndex === 0}
+                sx={[
+                  {
+                    display: { xs: 'none', sm: 'flex' },
+                    ml: { xs: 0, md: 1 },
+                    flexShrink: 0,
+                    borderRadius: 999,
+                    textTransform: "none",
+                    fontWeight: 600,
+                    padding: "6px 20px",
+                    background: "linear-gradient(135deg, #4ABDAC, #2F8F7C)",
+                    boxShadow: "0 10px 24px rgba(74, 189, 172, 0.25)",
+                  },
+                  {
+                    "&:hover": {
+                      background: "linear-gradient(135deg, #3CAFA0, #2A7D6B)",
+                      boxShadow: "0 12px 26px rgba(74, 189, 172, 0.3)",
+                    },
+                    "&.Mui-disabled": {
                       background: "rgba(74, 189, 172, 0.15)",
                       color: "rgba(38, 67, 54, 0.45)",
                       boxShadow: "none",
                     },
                   },
                 ]}
-                >
+              >
                 Clone
               </Button>
-            </Stack>
             </Box>
           </Toolbar>
         </AppBar>        <Container
