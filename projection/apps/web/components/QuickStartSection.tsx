@@ -310,10 +310,30 @@ export function QuickStartSection({
             )}
 
             {/* Input & Results Grid */}
-            <Grid container spacing={3}>
+            <Grid
+              container
+              justifyContent="center"
+              columnSpacing={{ xs: 0, md: 3 }}
+              rowSpacing={3}
+            >
               {/* Left Column - Inputs */}
-              <Grid item xs={12} md={6}>
-                <Stack spacing={3}>
+              <Grid
+                item
+                xs={12}
+                md={6}
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                }}
+              >
+                <Stack
+                  spacing={3}
+                  sx={{
+                    width: "100%",
+                    maxWidth: { xs: "100%", md: 520 },
+                    mx: "auto",
+                  }}
+                >
                   {/* Age Input */}
                   <Box>
                     <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: "#30403A" }}>
@@ -559,7 +579,15 @@ export function QuickStartSection({
 
               {/* Right Column - Results Card */}
               {result && (
-                <Grid item xs={12} md={6}>
+                <Grid
+                  item
+                  xs={12}
+                  md={6}
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                  }}
+                >
                   <motion.div
                     key={`${age}-${balance}-${strategy}`}
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -575,6 +603,9 @@ export function QuickStartSection({
                         borderRadius: 3,
                         position: "relative",
                         overflow: "hidden",
+                        width: "100%",
+                        maxWidth: { xs: "100%", md: 520 },
+                        mx: "auto",
                       }}
                     >
                       {/* Gradient accent bar */}

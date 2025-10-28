@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { View, ScrollView, StyleSheet, Dimensions, SafeAreaView, TouchableOpacity, Animated } from 'react-native';
+import { View, ScrollView, StyleSheet, Dimensions, SafeAreaView, TouchableOpacity, Animated, Switch } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -106,6 +106,8 @@ export default function WhatIfScreen() {
   const [snackbar, setSnackbar] = useState({ visible: false, message: '' });
   const [activeScenarioId, setActiveScenarioId] = useState<string>('baseline');
   const [scenarioPickerVisible, setScenarioPickerVisible] = useState(false);
+  const [viewMode, setViewMode] = useState<'balance' | 'breakdown'>('balance');
+  const [showAllScenarios, setShowAllScenarios] = useState(true);
 
   const scrollViewRef = useRef<ScrollView | null>(null);
   const scenarioPositions = useRef<Record<string, number>>({});
@@ -169,6 +171,24 @@ export default function WhatIfScreen() {
     ],
     [baseline.name, scenarios],
   );
+
+  const activeScenario = useMemo(() => {
+    if (activeScenarioId === 'baseline') {
+      return null;
+    }
+    return scenarios.find((scenario) => scenario.id === activeScenarioId) ?? null;
+  }, [activeScenarioId, scenarios]);
+
+  const visibleScenarios = useMemo(() => {
+    if (showAllScenarios) {
+      return scenarios;
+    }
+    if (activeScenarioId === 'baseline') {
+      return scenarios.slice(0, 1);
+    }
+    const selected = scenarios.find((scenario) => scenario.id === activeScenarioId);
+    return selected ? [selected] : scenarios.slice(0, 1);
+  }, [scenarios, showAllScenarios, activeScenarioId]);
 
   const currentScenarioSummary = useMemo(
     () => scenarioSummaries.find((summary) => summary.id === activeScenarioId) ?? scenarioSummaries[0],
@@ -362,6 +382,170 @@ export default function WhatIfScreen() {
           </View>
         </LinearGradient>
 
+        <View style={styles.scenarioTabsContainer}>
+          <View style={styles.primaryTabRow}>
+            <View
+              style={[
+                styles.scenarioTab,
+                activeScenarioId === 'baseline'
+                  ? styles.baselineTabActive
+                  : styles.baselineTabInactive,
+              ]}
+            >
+              <TouchableOpacity
+                style={styles.scenarioTabPressable}
+                onPress={() => handleSelectScenario('baseline', { closePicker: false })}
+                activeOpacity={0.85}
+              >
+                <Text
+                  variant="labelLarge"
+                  style={[
+                    styles.scenarioTabLabel,
+                    activeScenarioId === 'baseline' && styles.scenarioTabLabelActive,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {baseline.name || 'Baseline'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.scenarioTabsScrollContainer}
+              contentContainerStyle={styles.scenarioTabsScroll}
+            >
+              {scenarioSummaries
+                .filter((summary) => summary.id !== 'baseline')
+                .map((summary) => {
+                  const isActive = summary.id === activeScenarioId;
+                  return (
+                    <View
+                      key={summary.id}
+                      style={[
+                        styles.scenarioTab,
+                        isActive && styles.scenarioTabActive,
+                      ]}
+                    >
+                      <TouchableOpacity
+                        style={styles.scenarioTabPressable}
+                        onPress={() => handleSelectScenario(summary.id, { closePicker: false })}
+                        activeOpacity={0.85}
+                      >
+                        <Text
+                          variant="labelLarge"
+                          style={[
+                            styles.scenarioTabLabel,
+                            isActive && styles.scenarioTabLabelActive,
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {summary.name}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.scenarioTabClose}
+                        onPress={() => handleDeleteScenario(summary.id)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <MaterialCommunityIcons name="close" size={14} color={isActive ? '#FFFFFF' : '#4ABDAC'} />
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
+            </ScrollView>
+
+            <TouchableOpacity
+              style={styles.scenarioAddButton}
+              onPress={handleAddScenario}
+              activeOpacity={0.8}
+            >
+              <MaterialCommunityIcons name="plus" size={20} color="#4ABDAC" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.secondaryToolbar}>
+          <View style={styles.secondaryRow}>
+            <TouchableOpacity
+              style={styles.secondaryActionButton}
+              onPress={handleAddScenario}
+              activeOpacity={0.85}
+            >
+              <MaterialCommunityIcons name="plus" size={16} color="#2E7D32" style={styles.secondaryActionIcon} />
+              <Text variant="labelMedium" style={styles.secondaryActionLabel}>Add Scenario</Text>
+            </TouchableOpacity>
+
+            <View style={styles.modeToggleRow}>
+              <TouchableOpacity
+                style={[styles.modePill, viewMode === 'balance' && styles.modePillActive]}
+                onPress={() => setViewMode('balance')}
+                activeOpacity={0.85}
+              >
+                <Text
+                  variant="labelMedium"
+                  style={[styles.modePillLabel, viewMode === 'balance' && styles.modePillLabelActive]}
+                >
+                  Balance
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modePill, viewMode === 'breakdown' && styles.modePillActive]}
+                onPress={() => setViewMode('breakdown')}
+                activeOpacity={0.85}
+              >
+                <Text
+                  variant="labelMedium"
+                  style={[styles.modePillLabel, viewMode === 'breakdown' && styles.modePillLabelActive]}
+                >
+                  Breakdown
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.controlBar}>
+          <View style={styles.controlLeftGroup}>
+            <HelpIcon topicId="whatIfScenarios" helpTopic={getHelpTopic('whatIfScenarios')} />
+            <View style={styles.toggleGroup}>
+              <Text variant="labelMedium" style={styles.toggleLabel}>Show All</Text>
+              <Switch
+                value={showAllScenarios}
+                onValueChange={setShowAllScenarios}
+                thumbColor={showAllScenarios ? '#FFFFFF' : '#F4F4F4'}
+                trackColor={{ false: 'rgba(48,64,58,0.25)', true: '#69B47A' }}
+                ios_backgroundColor="rgba(48,64,58,0.25)"
+                style={styles.toggleSwitch}
+              />
+            </View>
+          </View>
+          <TouchableOpacity
+            style={[styles.cloneButton, !activeScenario && styles.cloneButtonDisabled]}
+            onPress={() => {
+              if (activeScenario) {
+                handleCloneScenario(activeScenario);
+              }
+            }}
+            disabled={!activeScenario}
+            activeOpacity={0.85}
+          >
+            <MaterialCommunityIcons
+              name="content-copy"
+              size={16}
+              color={activeScenario ? '#2E7D32' : 'rgba(48,64,58,0.35)'}
+              style={styles.cloneIcon}
+            />
+            <Text
+              variant="labelMedium"
+              style={[styles.cloneLabel, !activeScenario && styles.cloneLabelDisabled]}
+            >
+              Clone
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         <View
           style={styles.section}
           onLayout={(event) => {
@@ -419,7 +603,7 @@ export default function WhatIfScreen() {
             </Chip>
           </View>
 
-          {scenarios.map((scenario) => {
+          {visibleScenarios.map((scenario) => {
             const diff = calculateDifference(scenario, baseline);
             return (
               <View
@@ -449,15 +633,27 @@ export default function WhatIfScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text variant="titleMedium" style={styles.sectionTitle}>
-                📊 Comparison
+                {viewMode === 'balance' ? '📊 Balance Comparison' : '🧾 Breakdown'}
               </Text>
               <HelpIcon topicId="compoundGrowth" helpTopic={getHelpTopic('compoundGrowth')} />
             </View>
-            <ComparisonChart
-              baseline={comparison.baseline}
-              scenarios={comparison.scenarios}
-              width={screenWidth - 32}
-            />
+            {viewMode === 'balance' ? (
+              <ComparisonChart
+                baseline={comparison.baseline}
+                scenarios={comparison.scenarios}
+                width={screenWidth - 32}
+              />
+            ) : (
+              <View style={styles.breakdownPlaceholder}>
+                <Text variant="bodyMedium" style={styles.breakdownTitle}>
+                  Scenario Breakdown Coming Soon
+                </Text>
+                <Text variant="bodySmall" style={styles.breakdownDescription}>
+                  Toggle back to Balance to compare projected portfolio growth while we finish
+                  the detailed breakdown view.
+                </Text>
+              </View>
+            )}
           </View>
         )}
 
@@ -585,6 +781,191 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
     paddingBottom: SPACING.xxxl * 3,
     backgroundColor: '#F2FBF5',
+  },
+  scenarioTabsContainer: {
+    marginBottom: SPACING.md,
+  },
+  primaryTabRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.lg,
+  },
+  scenarioTabsScroll: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    paddingRight: SPACING.sm,
+  },
+  scenarioTabsScrollContainer: {
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 0,
+  },
+  scenarioTab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 24,
+    backgroundColor: 'rgba(74, 189, 172, 0.08)',
+    marginRight: SPACING.sm,
+  },
+  baselineTabInactive: {
+    backgroundColor: 'rgba(74, 189, 172, 0.18)',
+  },
+  baselineTabActive: {
+    backgroundColor: '#2E7D32',
+    shadowColor: '#2E7D32',
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  scenarioTabActive: {
+    backgroundColor: '#4ABDAC',
+  },
+  scenarioTabPressable: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+  },
+  scenarioTabLabel: {
+    color: '#2E7D32',
+    fontWeight: '600',
+  },
+  scenarioTabLabelActive: {
+    color: '#FFFFFF',
+  },
+  scenarioTabClose: {
+    paddingVertical: SPACING.xs,
+    paddingRight: SPACING.sm,
+    paddingLeft: SPACING.xs,
+  },
+  scenarioAddButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(74, 189, 172, 0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    marginRight: SPACING.sm,
+    marginLeft: SPACING.sm,
+  },
+  secondaryToolbar: {
+    paddingHorizontal: SPACING.lg,
+    marginTop: SPACING.xs,
+    marginBottom: SPACING.sm,
+  },
+  secondaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    alignContent: 'flex-start',
+  },
+  secondaryActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(74, 189, 172, 0.3)',
+    backgroundColor: 'rgba(74, 189, 172, 0.1)',
+    marginRight: SPACING.sm,
+    marginBottom: SPACING.sm,
+  },
+  secondaryActionLabel: {
+    color: '#2E7D32',
+    fontWeight: '600',
+  },
+  secondaryActionIcon: {
+    marginRight: SPACING.xs,
+  },
+  modeToggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.sm,
+  },
+  modePill: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: 20,
+    backgroundColor: 'rgba(48, 64, 58, 0.08)',
+    marginRight: SPACING.xs,
+  },
+  modePillActive: {
+    backgroundColor: '#2E7D32',
+  },
+  modePillLabel: {
+    color: '#2E7D32',
+    fontWeight: '600',
+  },
+  modePillLabelActive: {
+    color: '#FFFFFF',
+  },
+  controlBar: {
+    paddingHorizontal: SPACING.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.lg,
+    flexWrap: 'wrap',
+  },
+  controlLeftGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: SPACING.sm,
+    marginBottom: SPACING.sm,
+  },
+  toggleGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: SPACING.sm,
+  },
+  toggleLabel: {
+    color: '#30403A',
+    fontWeight: '600',
+    marginRight: SPACING.xs,
+  },
+  toggleSwitch: {
+    marginLeft: SPACING.xs,
+  },
+  cloneButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 20,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    backgroundColor: 'rgba(74, 189, 172, 0.12)',
+    marginBottom: SPACING.sm,
+  },
+  cloneIcon: {
+    marginRight: SPACING.xs,
+  },
+  cloneButtonDisabled: {
+    backgroundColor: 'rgba(48, 64, 58, 0.08)',
+  },
+  cloneLabel: {
+    color: '#2E7D32',
+    fontWeight: '600',
+  },
+  cloneLabelDisabled: {
+    color: 'rgba(48, 64, 58, 0.35)',
+  },
+  breakdownPlaceholder: {
+    padding: SPACING.lg,
+    borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: 'rgba(74, 189, 172, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(74, 189, 172, 0.18)',
+  },
+  breakdownTitle: {
+    fontWeight: '600',
+    color: '#264336',
+    marginBottom: SPACING.xs,
+  },
+  breakdownDescription: {
+    color: 'rgba(48, 64, 58, 0.75)',
+    lineHeight: 18,
   },
   brandHeader: {
     borderRadius: BORDER_RADIUS.xl,

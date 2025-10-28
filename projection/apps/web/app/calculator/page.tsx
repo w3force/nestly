@@ -497,7 +497,11 @@ export default function CalculatorPage() {
               </CardContent>
             </Card>
 
-            <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={2}
+              sx={{ mt: 2, '& .MuiButton-root': { minHeight: 48, fontSize: '0.95rem' } }}
+            >
               <Button
                 variant="contained"
                 startIcon={<SaveIcon />}

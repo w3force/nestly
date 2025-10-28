@@ -200,7 +200,11 @@ export const DeterministicForm: React.FC<DeterministicFormProps> = ({
         );
       })}
 
-      <Stack direction="row" spacing={1} sx={{ mt: 3 }}>
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={1}
+        sx={{ mt: 3, '& .MuiButton-root': { fontSize: '0.95rem', py: 1.25 } }}
+      >
         <Button
           type="submit"
           variant="contained"
@@ -228,6 +232,7 @@ export const DeterministicForm: React.FC<DeterministicFormProps> = ({
               color: "#4ABDAC",
               fontWeight: 700,
               textTransform: "none",
+              minHeight: 48,
               "&:hover": {
                 backgroundColor: "rgba(74, 189, 172, 0.08)",
               },
@@ -245,6 +250,7 @@ export const DeterministicForm: React.FC<DeterministicFormProps> = ({
               color: "#69B47A",
               fontWeight: 700,
               textTransform: "none",
+              minHeight: 48,
               "&:hover": {
                 backgroundColor: "rgba(105, 180, 122, 0.08)",
               },
