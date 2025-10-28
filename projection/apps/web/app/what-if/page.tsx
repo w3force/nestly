@@ -839,26 +839,25 @@ const WhatIfPlanner: React.FC = () => {
                   minWidth: 0,
                 }}
               >
-                {showDesktopNavigation && (
-                  <IconButton
-                    aria-label="Scroll scenarios left"
-                    onClick={() => scrollScenarios("left")}
-                    disabled={!scrollState.canScrollLeft}
-                    sx={{
-                      position: "absolute",
-                      left: -12,
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      bgcolor: "rgba(255,255,255,0.95)",
-                      boxShadow: "0 8px 18px rgba(38, 67, 54, 0.12)",
-                      zIndex: 2,
-                      "&:hover": { bgcolor: "#FFFFFF" },
-                      "&.Mui-disabled": { opacity: 0.35, boxShadow: "none" },
-                    }}
-                  >
-                    <ChevronLeftRoundedIcon />
-                  </IconButton>
-                )}
+                <IconButton
+                  aria-label="Scroll scenarios left"
+                  onClick={() => scrollScenarios("left")}
+                  disabled={!scrollState.canScrollLeft}
+                  sx={{
+                    display: { xs: 'none', md: 'flex' },
+                    position: "absolute",
+                    left: -12,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    bgcolor: "rgba(255,255,255,0.95)",
+                    boxShadow: "0 8px 18px rgba(38, 67, 54, 0.12)",
+                    zIndex: 2,
+                    "&:hover": { bgcolor: "#FFFFFF" },
+                    "&.Mui-disabled": { opacity: 0.35, boxShadow: "none" },
+                  }}
+                >
+                  <ChevronLeftRoundedIcon />
+                </IconButton>
 
                 <Box
                   ref={scenarioRailRef}
@@ -869,13 +868,15 @@ const WhatIfPlanner: React.FC = () => {
                     overflowX: "auto",
                     overflowY: "hidden",
                     scrollbarWidth: "none",
-                    maskImage:
-                      showDesktopNavigation && (scrollState.canScrollLeft || scrollState.canScrollRight)
+                    maskImage: {
+                      xs: undefined,
+                      md: (scrollState.canScrollLeft || scrollState.canScrollRight)
                         ? "linear-gradient(90deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0.9) 36px, rgba(0,0,0,0.9) calc(100% - 36px), rgba(0,0,0,0) 100%)"
                         : undefined,
+                    },
                     "&::-webkit-scrollbar": { display: "none" },
                     scrollBehavior: "smooth",
-                    px: showDesktopNavigation ? 4.5 : 1,
+                    px: { xs: 1, md: 4.5 },
                   }}
                 >
                   {whatIfChips.map((chip) => {
@@ -930,26 +931,25 @@ const WhatIfPlanner: React.FC = () => {
                   })}
                 </Box>
 
-                {showDesktopNavigation && (
-                  <IconButton
-                    aria-label="Scroll scenarios right"
-                    onClick={() => scrollScenarios("right")}
-                    disabled={!scrollState.canScrollRight}
-                    sx={{
-                      position: "absolute",
-                      right: -12,
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      bgcolor: "rgba(255,255,255,0.95)",
-                      boxShadow: "0 8px 18px rgba(38, 67, 54, 0.12)",
-                      zIndex: 2,
-                      "&:hover": { bgcolor: "#FFFFFF" },
-                      "&.Mui-disabled": { opacity: 0.35, boxShadow: "none" },
-                    }}
-                  >
-                    <ChevronRightRoundedIcon />
-                  </IconButton>
-                )}
+                <IconButton
+                  aria-label="Scroll scenarios right"
+                  onClick={() => scrollScenarios("right")}
+                  disabled={!scrollState.canScrollRight}
+                  sx={{
+                    display: { xs: 'none', md: 'flex' },
+                    position: "absolute",
+                    right: -12,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    bgcolor: "rgba(255,255,255,0.95)",
+                    boxShadow: "0 8px 18px rgba(38, 67, 54, 0.12)",
+                    zIndex: 2,
+                    "&:hover": { bgcolor: "#FFFFFF" },
+                    "&.Mui-disabled": { opacity: 0.35, boxShadow: "none" },
+                  }}
+                >
+                  <ChevronRightRoundedIcon />
+                </IconButton>
               </Box>
 
               {/* Add Scenario Button - Inline with scenarios */}
