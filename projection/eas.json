@@ -6,7 +6,8 @@
   "build": {
     "base": {
       "node": "20.18.0",
-      "pnpm": "8.15.0"
+      "pnpm": "8.15.0",
+      "resourceClass": "default"
     },
     "preview": {
       "extends": "base",
@@ -23,10 +24,16 @@
     },
     "production": {
       "extends": "base",
+      "android": {
+        "buildType": "app-bundle"
+      },
       "channel": "production",
       "env": {
         "EXPO_PUBLIC_API_URL": "https://nestly-api.up.railway.app"
       }
     }
+  },
+  "submit": {
+    "production": {}
   }
 }
