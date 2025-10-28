@@ -5,6 +5,7 @@
 import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { Text, Card, Button, useTheme, RadioButton } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { TierLevel, TIER_CONFIGS } from '@projection/shared';
 
 interface StartScreenProps {
@@ -17,8 +18,9 @@ export default function StartScreen({ onContinue, onSkip }: StartScreenProps) {
   const [selectedTier, setSelectedTier] = useState<TierLevel>('FREE');
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.content}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top', 'left', 'right']}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.content}>
         {/* Welcome Header */}
         <View style={styles.header}>
           <Text variant="displaySmall" style={[styles.title, { color: theme.colors.primary }]}>
@@ -215,7 +217,8 @@ export default function StartScreen({ onContinue, onSkip }: StartScreenProps) {
           </Text>
         </View>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -223,8 +226,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 24,
+  },
   content: {
     padding: 24,
+    paddingTop: 16,
   },
   header: {
     marginBottom: 32,
