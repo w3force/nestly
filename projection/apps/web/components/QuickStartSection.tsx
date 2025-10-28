@@ -233,7 +233,12 @@ export function QuickStartSection({
         mt: { xs: -3, md: -4 },
       }}
     >
-      <Container maxWidth="lg">
+      <Container 
+        maxWidth="lg"
+        sx={{
+          px: { xs: 2, sm: 3, md: 4 },
+        }}
+      >
         <motion.div
           initial={fadeInUp.initial}
           whileInView={fadeInUp.animate}

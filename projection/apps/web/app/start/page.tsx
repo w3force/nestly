@@ -131,7 +131,14 @@ export default function StartPage() {
     };
 
     return () => (
-      <Container maxWidth="md" sx={{ position: "relative", zIndex: 2 }}>
+      <Container 
+        maxWidth="md" 
+        sx={{ 
+          position: "relative", 
+          zIndex: 2,
+          px: { xs: 2, sm: 3, md: 4 },
+        }}
+      >
         <Paper
           elevation={0}
           sx={{
@@ -343,7 +350,12 @@ export default function StartPage() {
       };
 
       return (
-        <Container maxWidth="lg">
+        <Container 
+          maxWidth="lg"
+          sx={{
+            px: { xs: 2, sm: 3, md: 4 },
+          }}
+        >
           <Stack spacing={1.5} sx={{ mb: 3, textAlign: "center" }}>
             <Typography variant="h5" sx={{ fontWeight: 700, color: "#30403A" }}>
               {section.title ?? "Choose Your Analysis Method"}
