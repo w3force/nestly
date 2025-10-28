@@ -137,6 +137,8 @@ export default function StartPage() {
           position: "relative", 
           zIndex: 2,
           px: { xs: 2, sm: 3, md: 4 },
+          mx: 'auto',
+          width: '100%',
         }}
       >
         <Paper
@@ -354,6 +356,8 @@ export default function StartPage() {
           maxWidth="lg"
           sx={{
             px: { xs: 2, sm: 3, md: 4 },
+            mx: 'auto',
+            width: '100%',
           }}
         >
           <Stack spacing={1.5} sx={{ mb: 3, textAlign: "center" }}>

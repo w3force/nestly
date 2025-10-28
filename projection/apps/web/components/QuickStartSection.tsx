@@ -237,6 +237,8 @@ export function QuickStartSection({
         maxWidth="lg"
         sx={{
           px: { xs: 2, sm: 3, md: 4 },
+          mx: 'auto',
+          width: '100%',
         }}
       >
         <motion.div
