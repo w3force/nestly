@@ -974,34 +974,53 @@ const WhatIfPlanner: React.FC = () => {
               </IconButton>
             </Box>
 
-            {/* Mobile: Second Row - Controls */}
+            {/* Mobile: Second Row - Controls with better visual separation */}
             <Box
               sx={{
                 display: 'flex',
                 width: { xs: '100%', md: 'auto' },
-                gap: 1.2,
+                gap: { xs: 1.5, md: 1.2 },
                 alignItems: 'center',
-                flexWrap: 'wrap',
+                justifyContent: 'space-between',
                 order: { xs: 2, md: 3 },
+                pt: { xs: 1, md: 0 },
+                borderTop: { xs: '1px solid rgba(0,0,0,0.08)', md: 'none' },
               }}
             >
-              <ViewToggle
-                value={viewMode}
-                exclusive
-                onChange={(_, value) => value && setViewMode(value)}
-                size="small"
-                sx={{ flexShrink: 0 }}
-              >
-                <ToggleButton value="balance">Balance</ToggleButton>
-                <ToggleButton value="breakdown">Breakdown</ToggleButton>
-              </ViewToggle>
-              <HelpTooltip
-                title="View Modes"
-                description="Balance plots the total projected account value over time. Breakdown splits the projection into contributions, growth, and inflation drag for deeper context."
-                size="small"
-              />
-              <FormControlLabel
-                control={
+              {/* Left Group: View Mode */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <ViewToggle
+                  value={viewMode}
+                  exclusive
+                  onChange={(_, value) => value && setViewMode(value)}
+                  size="small"
+                  sx={{ flexShrink: 0 }}
+                >
+                  <ToggleButton value="balance">Balance</ToggleButton>
+                  <ToggleButton value="breakdown">Breakdown</ToggleButton>
+                </ViewToggle>
+                <HelpTooltip
+                  title="View Modes"
+                  description="Balance plots the total projected account value over time. Breakdown splits the projection into contributions, growth, and inflation drag for deeper context."
+                  size="small"
+                />
+              </Box>
+
+              {/* Right Group: Actions */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    bgcolor: 'rgba(0,0,0,0.03)',
+                    borderRadius: 999,
+                    px: 1.5,
+                    py: 0.5,
+                  }}
+                >
+                  <Typography variant="caption" sx={{ mr: 0.5, fontSize: '0.75rem' }}>
+                    Show All
+                  </Typography>
                   <Switch
                     size="small"
                     color="primary"
@@ -1009,45 +1028,41 @@ const WhatIfPlanner: React.FC = () => {
                     onChange={(_, checked) => setShowAllScenarios(checked)}
                     disabled={viewMode !== "balance"}
                   />
-                }
-                sx={{ ml: 1, flexShrink: 0 }}
-                labelPlacement="start"
-                label={<Typography variant="body2">Show All</Typography>}
-              />
-              
-              {/* Clone Button - Icon on mobile, button on desktop */}
-              <IconButton
-                aria-label="Clone scenario"
-                onClick={handleCloneScenario}
-                disabled={activeIndex === 0}
-                sx={{
-                  display: { xs: 'flex', sm: 'none' },
-                  border: "1.5px solid",
-                  borderColor: alpha(theme.palette.primary.main, 0.4),
-                  borderRadius: "50%",
-                  width: 38,
-                  height: 38,
-                  flexShrink: 0,
-                  backgroundColor: "rgba(74, 189, 172, 0.08)",
-                  "&:hover": {
-                    backgroundColor: "rgba(74, 189, 172, 0.16)",
-                  },
-                  "&.Mui-disabled": {
-                    borderColor: "rgba(74, 189, 172, 0.15)",
-                    backgroundColor: "rgba(74, 189, 172, 0.05)",
-                  },
-                }}
-              >
-                <ContentCopyIcon fontSize="small" />
-              </IconButton>
+                </Box>
 
-              <Button
-                variant="contained"
-                startIcon={<ContentCopyIcon />}
-                onClick={handleCloneScenario}
-                disabled={activeIndex === 0}
-                sx={[
-                  {
+                {/* Clone Button - Icon on mobile, button on desktop */}
+                <IconButton
+                  aria-label="Clone scenario"
+                  onClick={handleCloneScenario}
+                  disabled={activeIndex === 0}
+                  sx={{
+                    display: { xs: 'flex', sm: 'none' },
+                    border: "1.5px solid",
+                    borderColor: alpha(theme.palette.primary.main, 0.4),
+                    borderRadius: "50%",
+                    width: 38,
+                    height: 38,
+                    flexShrink: 0,
+                    backgroundColor: "rgba(74, 189, 172, 0.08)",
+                    "&:hover": {
+                      backgroundColor: "rgba(74, 189, 172, 0.16)",
+                    },
+                    "&.Mui-disabled": {
+                      borderColor: "rgba(74, 189, 172, 0.15)",
+                      backgroundColor: "rgba(74, 189, 172, 0.05)",
+                    },
+                  }}
+                >
+                  <ContentCopyIcon fontSize="small" />
+                </IconButton>
+
+                <Button
+                  variant="contained"
+                  startIcon={<ContentCopyIcon />}
+                  onClick={handleCloneScenario}
+                  disabled={activeIndex === 0}
+                  sx={[
+                    {
                     display: { xs: 'none', sm: 'flex' },
                     ml: { xs: 0, md: 1 },
                     flexShrink: 0,
@@ -1073,6 +1088,7 @@ const WhatIfPlanner: React.FC = () => {
               >
                 Clone
               </Button>
+              </Box>
             </Box>
           </Toolbar>
         </AppBar>        <Container
