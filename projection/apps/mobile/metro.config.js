@@ -5,17 +5,18 @@ const projectRoot = __dirname;
 const workspaceRoot = path.resolve(projectRoot, '../..');
 
 const config = getDefaultConfig(projectRoot);
+config.resolver = config.resolver ?? {};
 
 // Watch folders for monorepo
-config.watchFolders = [
-  workspaceRoot,
-];
+const watchFolders = new Set(config.watchFolders ?? []);
+watchFolders.add(workspaceRoot);
+config.watchFolders = Array.from(watchFolders);
 
 // Node modules to watch in the workspace
-config.resolver.nodeModulesPaths = [
-  path.resolve(projectRoot, 'node_modules'),
-  path.resolve(workspaceRoot, 'node_modules'),
-];
+const nodeModulesPaths = new Set(config.resolver?.nodeModulesPaths ?? []);
+nodeModulesPaths.add(path.resolve(projectRoot, 'node_modules'));
+nodeModulesPaths.add(path.resolve(workspaceRoot, 'node_modules'));
+config.resolver.nodeModulesPaths = Array.from(nodeModulesPaths);
 
 const reactPath = path.join(projectRoot, 'node_modules/react');
 const reactJsxRuntimePath = path.join(projectRoot, 'node_modules/react/jsx-runtime');

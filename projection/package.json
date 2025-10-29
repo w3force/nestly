@@ -12,7 +12,8 @@
     "deploy:railway": "echo 'Deploy via Railway dashboard or CLI'",
     "build:ios": "cd apps/mobile && eas build --platform ios --profile preview",
     "build:android": "cd apps/mobile && eas build --platform android --profile preview",
-    "build:mobile": "cd apps/mobile && eas build --platform all --profile preview"
+    "build:mobile": "cd apps/mobile && eas build --platform all --profile preview",
+    "postinstall": "node scripts/patch-expo-error-recovery.js"
   },
   "devDependencies": {
     "@types/react": "^19.2.2",

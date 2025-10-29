@@ -4,7 +4,6 @@
     "slug": "nestly",
     "version": "1.0.0",
     "orientation": "portrait",
-    "entryPoint": "./index.js",
     "icon": "./assets/icon3.png",
     "scheme": "nestly",
     "userInterfaceStyle": "automatic",

@@ -2,6 +2,9 @@
 !../../pnpm-lock.yaml
 !../../pnpm-workspace.yaml
 !../../package.json
+!../../.yarnrc
+!../../../.yarnrc
+!../../scripts/**
 
 # Exclude other apps
 ../../apps/web/**
