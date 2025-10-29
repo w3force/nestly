@@ -59,6 +59,7 @@ build/
 apps/mobile/android/app/build/
 apps/mobile/android/.gradle/
 apps/mobile/android/.idea/
+apps/mobile/android/
 apps/mobile/build-*.apk
 
 # Misc
