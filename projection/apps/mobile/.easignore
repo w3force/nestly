@@ -1,6 +1,7 @@
-# Exclude monorepo workspace files to prevent auto-detection
-../../pnpm-workspace.yaml
-../../package.json
+# Ensure pnpm metadata required for workspaces ships with the build
+!../../pnpm-lock.yaml
+!../../pnpm-workspace.yaml
+!../../package.json
 
 # Exclude other apps
 ../../apps/web/**

@@ -8,7 +8,8 @@
       "node": "20.18.0",
       "pnpm": "8.15.0",
       "env": {
-        "COREPACK_ENABLE_STRICT": "0"
+        "COREPACK_ENABLE_STRICT": "0",
+        "EAS_PNPM_VERSION": "8.15.0"
       }
     },
     "development": {
