@@ -1,6 +1,5 @@
 # Node
 node_modules/
-pnpm-lock.yaml
 .pnp.cjs
 .cache/
 .next/
@@ -47,6 +46,8 @@ __pycache__/
 
 # React Native / Expo
 .expo/
+**/.expo/
+apps/mobile/.expo/
 .expo-shared/
 
 # JetBrains
@@ -55,6 +56,10 @@ __pycache__/
 # Build outputs
 dist/
 build/
+apps/mobile/android/app/build/
+apps/mobile/android/.gradle/
+apps/mobile/android/.idea/
+apps/mobile/build-*.apk
 
 # Misc
 coverage/
