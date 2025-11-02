@@ -17,9 +17,20 @@ const Stack = createStackNavigator();
 
 const ONBOARDING_KEY = '@nestly_onboarding_complete';
 
+type TabRouteName = 'Home' | 'Calculator' | 'WhatIf' | 'Profile';
+
+const TAB_ROUTES: Record<string, TabRouteName> = {
+  Home: 'Home',
+  Calculator: 'Calculator',
+  WhatIf: 'WhatIf',
+  Profile: 'Profile',
+  Deterministic: 'Calculator',
+};
+
 export default function RootNavigator() {
   const [isLoading, setIsLoading] = useState(true);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [initialTab, setInitialTab] = useState<TabRouteName>('Home');
   const { setTier } = useTier();
 
   useEffect(() => {
@@ -41,15 +52,17 @@ export default function RootNavigator() {
     try {
       await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
       await setTier(selectedTier);
+      setInitialTab('Home');
       setHasCompletedOnboarding(true);
     } catch (error) {
       console.error('Error completing onboarding:', error);
     }
   };
 
-  const skipOnboarding = async () => {
+  const skipOnboarding = async (targetTab: TabRouteName = 'Home') => {
     try {
       await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+      setInitialTab(targetTab);
       setHasCompletedOnboarding(true);
     } catch (error) {
       console.error('Error skipping onboarding:', error);
@@ -76,8 +89,17 @@ export default function RootNavigator() {
             {(props) => (
               <LandingScreen
                 {...props}
-                onGetStarted={() => props.navigation.navigate('Start')}
-                onNavigateTo={(screen) => props.navigation.navigate(screen)}
+                onGetStarted={async () => {
+                  await skipOnboarding('Calculator');
+                }}
+                onNavigateTo={async (screen) => {
+                  const targetTab = TAB_ROUTES[screen];
+                  if (targetTab) {
+                    await skipOnboarding(targetTab);
+                    return;
+                  }
+                  props.navigation.navigate(screen);
+                }}
               />
             )}
           </Stack.Screen>
@@ -86,7 +108,7 @@ export default function RootNavigator() {
               <StartScreen
                 {...props}
                 onContinue={completeOnboarding}
-                onSkip={skipOnboarding}
+                onSkip={() => skipOnboarding()}
               />
             )}
           </Stack.Screen>
@@ -94,7 +116,7 @@ export default function RootNavigator() {
             {(props) => (
               <AuthScreen
                 {...props}
-                onGuest={skipOnboarding}
+                onGuest={() => skipOnboarding()}
                 onSignIn={() => skipOnboarding()}
                 onSignUp={() => skipOnboarding()}
               />
@@ -103,11 +125,9 @@ export default function RootNavigator() {
         </>
       ) : (
         <>
-          <Stack.Screen
-            name="Main"
-            component={BottomTabNavigator}
-            options={{ headerShown: false }}
-          />
+          <Stack.Screen name="Main" options={{ headerShown: false }}>
+            {() => <BottomTabNavigator key={initialTab} initialRouteName={initialTab} />}
+          </Stack.Screen>
         </>
       )}
     </Stack.Navigator>

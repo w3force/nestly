@@ -15,6 +15,9 @@ interface ScenarioDockProps {
   onOpenPicker: () => void;
   onAddScenario: () => void;
   canAddScenario: boolean;
+  resultLabel?: string;
+  onRemoveScenario?: () => void;
+  canRemoveScenario?: boolean;
 }
 
 export const ScenarioDock: React.FC<ScenarioDockProps> = ({
@@ -24,8 +27,12 @@ export const ScenarioDock: React.FC<ScenarioDockProps> = ({
   onOpenPicker,
   onAddScenario,
   canAddScenario,
+  resultLabel,
+  onRemoveScenario,
+  canRemoveScenario = false,
 }) => {
   const hasMultiple = scenarios.length > 1;
+  const showRemove = Boolean(onRemoveScenario) && canRemoveScenario;
 
   return (
     <Surface style={styles.container} elevation={4}>
@@ -45,6 +52,29 @@ export const ScenarioDock: React.FC<ScenarioDockProps> = ({
           </Text>
           <Icon source="chevron-up" size={18} color={COLORS.primary} style={styles.chevronIcon} />
         </TouchableOpacity>
+
+        {resultLabel ? (
+          <View style={styles.resultPill}>
+            <Text
+              variant="labelMedium"
+              style={styles.resultText}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {resultLabel}
+            </Text>
+            {showRemove ? (
+              <IconButton
+                icon="delete-outline"
+                size={18}
+                onPress={onRemoveScenario}
+                style={styles.removeButton}
+                iconColor="#B3261E"
+                containerColor="transparent"
+              />
+            ) : null}
+          </View>
+        ) : null}
 
         <IconButton
           icon="chevron-right"
@@ -91,6 +121,12 @@ const styles = StyleSheet.create({
     margin: 0,
     backgroundColor: COLORS.primary,
   },
+  removeButton: {
+    marginLeft: SPACING.xs,
+    margin: 0,
+    width: 32,
+    height: 32,
+  },
   currentChip: {
     flex: 1,
     flexDirection: 'row',
@@ -107,6 +143,21 @@ const styles = StyleSheet.create({
   },
   chevronIcon: {
     marginLeft: SPACING.xs,
+  },
+  resultPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 0,
+    maxWidth: 140,
+    overflow: 'hidden',
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 6,
+    borderRadius: 18,
+    backgroundColor: 'rgba(48, 64, 58, 0.08)',
+  },
+  resultText: {
+    color: '#30403A',
+    fontWeight: '600',
   },
 });
 

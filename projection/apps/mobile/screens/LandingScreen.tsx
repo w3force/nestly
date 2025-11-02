@@ -112,7 +112,13 @@ export default function LandingScreen({ onGetStarted, onNavigateTo }: LandingScr
           </Text>
           <Button
             mode="contained"
-            onPress={() => onGetStarted?.()}
+            onPress={() => {
+              if (onNavigateTo) {
+                onNavigateTo(routeMap.monteCarlo);
+              } else {
+                onGetStarted?.();
+              }
+            }}
             style={styles.ctaButton}
             labelStyle={styles.ctaButtonLabel}
             contentStyle={styles.ctaButtonContent}
@@ -314,11 +320,6 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     marginBottom: 12,
     width: '100%',
-    shadowColor: '#000000',
-    shadowOpacity: 0.05,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 6,
   },
   heroContent: {
     maxWidth: 620,

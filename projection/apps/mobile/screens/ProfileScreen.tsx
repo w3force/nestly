@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { View, ScrollView, StyleSheet, SafeAreaView, Animated } from 'react-native';
+import { View, ScrollView, StyleSheet, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   Text,
@@ -15,7 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { useTier } from '../contexts/TierContext';
 import { COLORS, SPACING, BORDER_RADIUS } from '@projection/shared';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const PAGE_ICON_NAME = 'account-circle-outline';
@@ -47,6 +47,10 @@ export default function ProfileScreen() {
 
   const scenariosAvailableText = displayMaxScenarios === Infinity ? '∞' : displayMaxScenarios;
   const insets = useSafeAreaInsets();
+  const topContentPadding = useMemo(
+    () => SPACING.lg + Math.max(insets.top - SPACING.md, 0),
+    [insets.top],
+  );
   const scrollY = useRef(new Animated.Value(0)).current;
   const headerOpacity = useMemo(
     () =>
@@ -68,7 +72,7 @@ export default function ProfileScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <Animated.View
         pointerEvents="none"
         style={[
@@ -97,7 +101,7 @@ export default function ProfileScreen() {
         style={{ flex: 1 }}
         contentContainerStyle={[
           styles.content,
-          { paddingTop: SPACING.lg + insets.top },
+          { paddingTop: topContentPadding },
         ]}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { View, ScrollView, StyleSheet, Dimensions, SafeAreaView, TouchableOpacity, Animated, Switch } from 'react-native';
+import { View, ScrollView, StyleSheet, Dimensions, TouchableOpacity, Animated, Switch } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -18,9 +18,9 @@ import {
   WhatIfScenario,
   DEFAULT_BASELINE,
   createScenario,
-  cloneScenario,
   compareScenarios,
   calculateDifference,
+  formatCurrency,
   getHelpTopic,
   getScreenDefinition,
   getFieldDefinition,
@@ -30,7 +30,7 @@ import {
 import { ScenarioCard, ComparisonChart, HelpIcon } from '../components';
 import ScenarioDock, { ScenarioSummary } from '../components/ScenarioDock';
 import { useFeatureLimit } from '../contexts/TierContext';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const normalizeScenario = (scenario: WhatIfScenario): WhatIfScenario => {
@@ -114,6 +114,10 @@ export default function WhatIfScreen() {
   const scenarioSectionOffset = useRef<number>(0);
   const scrollY = useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
+  const topContentPadding = useMemo(
+    () => SPACING.lg + Math.max(insets.top - SPACING.md, 0),
+    [insets.top],
+  );
   const headerOpacity = useMemo(
     () =>
       scrollY.interpolate({
@@ -157,12 +161,14 @@ export default function WhatIfScreen() {
   }, [scenarios]);
 
   useEffect(() => {
-    if (activeScenarioId !== 'baseline' && !scenarios.some((s) => s.id === activeScenarioId)) {
+    if (
+      activeScenarioId !== 'baseline' &&
+      activeScenarioId !== 'results' &&
+      !scenarios.some((s) => s.id === activeScenarioId)
+    ) {
       setActiveScenarioId('baseline');
     }
   }, [scenarios, activeScenarioId]);
-
-  const scenarioOrder = useMemo(() => ['baseline', ...scenarios.map((s) => s.id)], [scenarios]);
 
   const scenarioSummaries = useMemo<ScenarioSummary[]>(
     () => [
@@ -171,6 +177,22 @@ export default function WhatIfScreen() {
     ],
     [baseline.name, scenarios],
   );
+
+  const dockEntries = useMemo(
+    () =>
+      scenarios.length > 0
+        ? [...scenarioSummaries, { id: 'results', name: 'Results' }]
+        : [...scenarioSummaries],
+    [scenarioSummaries, scenarios.length],
+  );
+
+  const scenarioOrder = useMemo(() => {
+    const order = ['baseline', ...scenarios.map((s) => s.id)];
+    if (scenarios.length > 0) {
+      order.push('results');
+    }
+    return order;
+  }, [scenarios]);
 
   const activeScenario = useMemo(() => {
     if (activeScenarioId === 'baseline') {
@@ -190,28 +212,48 @@ export default function WhatIfScreen() {
     return selected ? [selected] : scenarios.slice(0, 1);
   }, [scenarios, showAllScenarios, activeScenarioId]);
 
-  const currentScenarioSummary = useMemo(
-    () => scenarioSummaries.find((summary) => summary.id === activeScenarioId) ?? scenarioSummaries[0],
-    [activeScenarioId, scenarioSummaries],
-  );
+  const currentDockItem = useMemo(() => {
+    const resolved = dockEntries.find((entry) => entry.id === activeScenarioId);
+    return resolved ?? dockEntries[0];
+  }, [activeScenarioId, dockEntries]);
+
+  const dockResultLabel = useMemo(() => {
+    if (!activeScenario) {
+      return null;
+    }
+    const diff = calculateDifference(activeScenario, baseline);
+    if (!Number.isFinite(diff)) {
+      return null;
+    }
+    const formatted = formatCurrency(Math.abs(diff));
+    if (diff === 0) {
+      return `±${formatted}`;
+    }
+    return `${diff > 0 ? '+' : '-'}${formatted}`;
+  }, [activeScenario, baseline]);
 
   const canAddScenario = scenarios.length < maxScenarios;
 
-  const getScenarioName = useCallback(
-    (id: string) => scenarioSummaries.find((summary) => summary.id === id)?.name ?? 'Scenario',
-    [scenarioSummaries],
-  );
-
   const scrollToScenario = useCallback(
     (id: string) => {
-      const position = scenarioPositions.current[id];
-      if (position != null) {
-        scrollViewRef.current?.scrollTo({ y: Math.max(position - SPACING.md, 0), animated: true });
-      } else if (id === 'baseline') {
-        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-      }
+      const attemptScroll = (remainingTries: number) => {
+        const position = scenarioPositions.current[id];
+        if (position != null) {
+          const buffer = Math.max(topContentPadding + SPACING.xxxl + 12, 0);
+          const target = Math.max(position - buffer, 0);
+          scrollViewRef.current?.scrollTo({ y: target, animated: true });
+        } else if (remainingTries > 0) {
+          requestAnimationFrame(() => attemptScroll(remainingTries - 1));
+        } else if (id === 'baseline') {
+          scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+        } else if (id === 'results') {
+          scrollViewRef.current?.scrollToEnd?.({ animated: true });
+        }
+      };
+
+      requestAnimationFrame(() => attemptScroll(4));
     },
-    [],
+    [topContentPadding],
   );
 
   const handleSelectScenario = useCallback(
@@ -272,18 +314,6 @@ export default function WhatIfScreen() {
     setTimeout(() => scrollToScenario(newScenario.id), 300);
   };
 
-  const handleCloneScenario = (scenario: WhatIfScenario) => {
-    if (scenarios.length >= maxScenarios) {
-      setSnackbar({ visible: true, message: `Maximum ${maxScenarios} scenarios reached` });
-      return;
-    }
-    const cloned = normalizeScenario(cloneScenario(scenario, scenarios.length + 1));
-    setScenarios((prev) => [...prev, cloned]);
-    setActiveScenarioId(cloned.id);
-    setSnackbar({ visible: true, message: `Cloned ${scenario.name}` });
-    setTimeout(() => scrollToScenario(cloned.id), 300);
-  };
-
   const handleDeleteScenario = (id: string) => {
     setSelectedScenario(id);
     setDeleteDialog(true);
@@ -319,7 +349,7 @@ export default function WhatIfScreen() {
   const screenWidth = Dimensions.get('window').width;
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: '#F2FBF5' }]}> 
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: '#F2FBF5' }]} edges={['left', 'right']}>
       <Animated.View
         pointerEvents="none"
         style={[
@@ -349,7 +379,7 @@ export default function WhatIfScreen() {
         style={{ flex: 1 }}
         contentContainerStyle={[
           styles.content,
-          { paddingTop: SPACING.lg + insets.top },
+          { paddingTop: topContentPadding },
         ]}
         scrollEventThrottle={16}
         onScroll={Animated.event(
@@ -381,170 +411,6 @@ export default function WhatIfScreen() {
             </View>
           </View>
         </LinearGradient>
-
-        <View style={styles.scenarioTabsContainer}>
-          <View style={styles.primaryTabRow}>
-            <View
-              style={[
-                styles.scenarioTab,
-                activeScenarioId === 'baseline'
-                  ? styles.baselineTabActive
-                  : styles.baselineTabInactive,
-              ]}
-            >
-              <TouchableOpacity
-                style={styles.scenarioTabPressable}
-                onPress={() => handleSelectScenario('baseline', { closePicker: false })}
-                activeOpacity={0.85}
-              >
-                <Text
-                  variant="labelLarge"
-                  style={[
-                    styles.scenarioTabLabel,
-                    activeScenarioId === 'baseline' && styles.scenarioTabLabelActive,
-                  ]}
-                  numberOfLines={1}
-                >
-                  {baseline.name || 'Baseline'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.scenarioTabsScrollContainer}
-              contentContainerStyle={styles.scenarioTabsScroll}
-            >
-              {scenarioSummaries
-                .filter((summary) => summary.id !== 'baseline')
-                .map((summary) => {
-                  const isActive = summary.id === activeScenarioId;
-                  return (
-                    <View
-                      key={summary.id}
-                      style={[
-                        styles.scenarioTab,
-                        isActive && styles.scenarioTabActive,
-                      ]}
-                    >
-                      <TouchableOpacity
-                        style={styles.scenarioTabPressable}
-                        onPress={() => handleSelectScenario(summary.id, { closePicker: false })}
-                        activeOpacity={0.85}
-                      >
-                        <Text
-                          variant="labelLarge"
-                          style={[
-                            styles.scenarioTabLabel,
-                            isActive && styles.scenarioTabLabelActive,
-                          ]}
-                          numberOfLines={1}
-                        >
-                          {summary.name}
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.scenarioTabClose}
-                        onPress={() => handleDeleteScenario(summary.id)}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
-                        <MaterialCommunityIcons name="close" size={14} color={isActive ? '#FFFFFF' : '#4ABDAC'} />
-                      </TouchableOpacity>
-                    </View>
-                  );
-                })}
-            </ScrollView>
-
-            <TouchableOpacity
-              style={styles.scenarioAddButton}
-              onPress={handleAddScenario}
-              activeOpacity={0.8}
-            >
-              <MaterialCommunityIcons name="plus" size={20} color="#4ABDAC" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.secondaryToolbar}>
-          <View style={styles.secondaryRow}>
-            <TouchableOpacity
-              style={styles.secondaryActionButton}
-              onPress={handleAddScenario}
-              activeOpacity={0.85}
-            >
-              <MaterialCommunityIcons name="plus" size={16} color="#2E7D32" style={styles.secondaryActionIcon} />
-              <Text variant="labelMedium" style={styles.secondaryActionLabel}>Add Scenario</Text>
-            </TouchableOpacity>
-
-            <View style={styles.modeToggleRow}>
-              <TouchableOpacity
-                style={[styles.modePill, viewMode === 'balance' && styles.modePillActive]}
-                onPress={() => setViewMode('balance')}
-                activeOpacity={0.85}
-              >
-                <Text
-                  variant="labelMedium"
-                  style={[styles.modePillLabel, viewMode === 'balance' && styles.modePillLabelActive]}
-                >
-                  Balance
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modePill, viewMode === 'breakdown' && styles.modePillActive]}
-                onPress={() => setViewMode('breakdown')}
-                activeOpacity={0.85}
-              >
-                <Text
-                  variant="labelMedium"
-                  style={[styles.modePillLabel, viewMode === 'breakdown' && styles.modePillLabelActive]}
-                >
-                  Breakdown
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.controlBar}>
-          <View style={styles.controlLeftGroup}>
-            <HelpIcon topicId="whatIfScenarios" helpTopic={getHelpTopic('whatIfScenarios')} />
-            <View style={styles.toggleGroup}>
-              <Text variant="labelMedium" style={styles.toggleLabel}>Show All</Text>
-              <Switch
-                value={showAllScenarios}
-                onValueChange={setShowAllScenarios}
-                thumbColor={showAllScenarios ? '#FFFFFF' : '#F4F4F4'}
-                trackColor={{ false: 'rgba(48,64,58,0.25)', true: '#69B47A' }}
-                ios_backgroundColor="rgba(48,64,58,0.25)"
-                style={styles.toggleSwitch}
-              />
-            </View>
-          </View>
-          <TouchableOpacity
-            style={[styles.cloneButton, !activeScenario && styles.cloneButtonDisabled]}
-            onPress={() => {
-              if (activeScenario) {
-                handleCloneScenario(activeScenario);
-              }
-            }}
-            disabled={!activeScenario}
-            activeOpacity={0.85}
-          >
-            <MaterialCommunityIcons
-              name="content-copy"
-              size={16}
-              color={activeScenario ? '#2E7D32' : 'rgba(48,64,58,0.35)'}
-              style={styles.cloneIcon}
-            />
-            <Text
-              variant="labelMedium"
-              style={[styles.cloneLabel, !activeScenario && styles.cloneLabelDisabled]}
-            >
-              Clone
-            </Text>
-          </TouchableOpacity>
-        </View>
 
         <View
           style={styles.section}
@@ -620,7 +486,6 @@ export default function WhatIfScreen() {
                   groups={scenarioGroups}
                   onUpdate={(updates: Partial<WhatIfScenario>) => handleUpdateScenario(scenario.id, updates)}
                   onDelete={() => handleDeleteScenario(scenario.id)}
-                  onClone={() => handleCloneScenario(scenario)}
                   difference={diff}
                   isActive={activeScenarioId === scenario.id}
                 />
@@ -630,12 +495,56 @@ export default function WhatIfScreen() {
         </View>
 
         {scenarios.length > 0 && (
-          <View style={styles.section}>
+          <View
+            style={styles.section}
+            onLayout={(event) => {
+              scenarioPositions.current['results'] = event.nativeEvent.layout.y;
+            }}
+          >
             <View style={styles.sectionHeader}>
               <Text variant="titleMedium" style={styles.sectionTitle}>
                 {viewMode === 'balance' ? '📊 Balance Comparison' : '🧾 Breakdown'}
               </Text>
               <HelpIcon topicId="compoundGrowth" helpTopic={getHelpTopic('compoundGrowth')} />
+            </View>
+            <View style={styles.resultsToolbar}>
+              <View style={styles.modeToggleRow}>
+                <TouchableOpacity
+                  style={[styles.modePill, viewMode === 'balance' && styles.modePillActive]}
+                  onPress={() => setViewMode('balance')}
+                  activeOpacity={0.85}
+                >
+                  <Text
+                    variant="labelMedium"
+                    style={[styles.modePillLabel, viewMode === 'balance' && styles.modePillLabelActive]}
+                  >
+                    Balance
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modePill, viewMode === 'breakdown' && styles.modePillActive]}
+                  onPress={() => setViewMode('breakdown')}
+                  activeOpacity={0.85}
+                >
+                  <Text
+                    variant="labelMedium"
+                    style={[styles.modePillLabel, viewMode === 'breakdown' && styles.modePillLabelActive]}
+                  >
+                    Breakdown
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.resultsToggleGroup}>
+                <Text variant="labelMedium" style={styles.toggleLabel}>Show All</Text>
+                <Switch
+                  value={showAllScenarios}
+                  onValueChange={setShowAllScenarios}
+                  thumbColor={showAllScenarios ? '#FFFFFF' : '#F4F4F4'}
+                  trackColor={{ false: 'rgba(48,64,58,0.25)', true: '#69B47A' }}
+                  ios_backgroundColor="rgba(48,64,58,0.25)"
+                  style={styles.toggleSwitch}
+                />
+              </View>
             </View>
             {viewMode === 'balance' ? (
               <ComparisonChart
@@ -660,14 +569,19 @@ export default function WhatIfScreen() {
         <View style={styles.bottomSpacer} />
       </AnimatedScrollView>
 
-      {currentScenarioSummary && (
+      {currentDockItem && (
         <ScenarioDock
-          currentScenario={currentScenarioSummary}
-          scenarios={scenarioSummaries}
+          currentScenario={currentDockItem}
+          scenarios={dockEntries}
           onCycle={handleCycleScenario}
           onOpenPicker={() => setScenarioPickerVisible(true)}
           onAddScenario={handleAddScenario}
           canAddScenario={canAddScenario}
+          resultLabel={dockResultLabel}
+          onRemoveScenario={
+            activeScenario ? () => handleDeleteScenario(activeScenario.id) : undefined
+          }
+          canRemoveScenario={Boolean(activeScenario)}
         />
       )}
 
@@ -682,7 +596,7 @@ export default function WhatIfScreen() {
           </Text>
           <Divider />
           <View style={styles.pickerList}>
-            {scenarioSummaries.map((summary) => {
+            {dockEntries.map((summary) => {
               const isActive = summary.id === activeScenarioId;
               return (
                 <TouchableOpacity
@@ -696,7 +610,11 @@ export default function WhatIfScreen() {
                       {summary.name}
                     </Text>
                     <Text variant="bodySmall" style={styles.pickerRowSubtitle}>
-                      {summary.id === 'baseline' ? 'Reference scenario' : 'What-if scenario'}
+                      {summary.id === 'baseline'
+                        ? 'Reference scenario'
+                        : summary.id === 'results'
+                        ? 'Results overview'
+                        : 'What-if scenario'}
                     </Text>
                   </View>
                   {isActive ? (
@@ -782,108 +700,16 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.xxxl * 3,
     backgroundColor: '#F2FBF5',
   },
-  scenarioTabsContainer: {
-    marginBottom: SPACING.md,
-  },
-  primaryTabRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.lg,
-  },
-  scenarioTabsScroll: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    paddingRight: SPACING.sm,
-  },
-  scenarioTabsScrollContainer: {
-    flexGrow: 1,
-    flexShrink: 1,
-    minWidth: 0,
-  },
-  scenarioTab: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 24,
-    backgroundColor: 'rgba(74, 189, 172, 0.08)',
-    marginRight: SPACING.sm,
-  },
-  baselineTabInactive: {
-    backgroundColor: 'rgba(74, 189, 172, 0.18)',
-  },
-  baselineTabActive: {
-    backgroundColor: '#2E7D32',
-    shadowColor: '#2E7D32',
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  scenarioTabActive: {
-    backgroundColor: '#4ABDAC',
-  },
-  scenarioTabPressable: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-  },
-  scenarioTabLabel: {
-    color: '#2E7D32',
-    fontWeight: '600',
-  },
-  scenarioTabLabelActive: {
-    color: '#FFFFFF',
-  },
-  scenarioTabClose: {
-    paddingVertical: SPACING.xs,
-    paddingRight: SPACING.sm,
-    paddingLeft: SPACING.xs,
-  },
-  scenarioAddButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(74, 189, 172, 0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    marginRight: SPACING.sm,
-    marginLeft: SPACING.sm,
-  },
-  secondaryToolbar: {
-    paddingHorizontal: SPACING.lg,
-    marginTop: SPACING.xs,
-    marginBottom: SPACING.sm,
-  },
-  secondaryRow: {
+  resultsToolbar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     flexWrap: 'wrap',
-    alignContent: 'flex-start',
-  },
-  secondaryActionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(74, 189, 172, 0.3)',
-    backgroundColor: 'rgba(74, 189, 172, 0.1)',
-    marginRight: SPACING.sm,
-    marginBottom: SPACING.sm,
-  },
-  secondaryActionLabel: {
-    color: '#2E7D32',
-    fontWeight: '600',
-  },
-  secondaryActionIcon: {
-    marginRight: SPACING.xs,
+    marginBottom: SPACING.md,
   },
   modeToggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: SPACING.sm,
-    marginBottom: SPACING.sm,
   },
   modePill: {
     paddingHorizontal: SPACING.md,
@@ -902,21 +728,7 @@ const styles = StyleSheet.create({
   modePillLabelActive: {
     color: '#FFFFFF',
   },
-  controlBar: {
-    paddingHorizontal: SPACING.lg,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.lg,
-    flexWrap: 'wrap',
-  },
-  controlLeftGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: SPACING.sm,
-    marginBottom: SPACING.sm,
-  },
-  toggleGroup: {
+  resultsToggleGroup: {
     flexDirection: 'row',
     alignItems: 'center',
     marginLeft: SPACING.sm,
@@ -924,32 +736,9 @@ const styles = StyleSheet.create({
   toggleLabel: {
     color: '#30403A',
     fontWeight: '600',
-    marginRight: SPACING.xs,
   },
   toggleSwitch: {
     marginLeft: SPACING.xs,
-  },
-  cloneButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 20,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    backgroundColor: 'rgba(74, 189, 172, 0.12)',
-    marginBottom: SPACING.sm,
-  },
-  cloneIcon: {
-    marginRight: SPACING.xs,
-  },
-  cloneButtonDisabled: {
-    backgroundColor: 'rgba(48, 64, 58, 0.08)',
-  },
-  cloneLabel: {
-    color: '#2E7D32',
-    fontWeight: '600',
-  },
-  cloneLabelDisabled: {
-    color: 'rgba(48, 64, 58, 0.35)',
   },
   breakdownPlaceholder: {
     padding: SPACING.lg,

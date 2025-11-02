@@ -36,7 +36,6 @@ interface ScenarioCardProps {
   groups?: ScenarioGroup[];
   onUpdate: (updates: Partial<WhatIfScenario>) => void;
   onDelete?: () => void;
-  onClone?: () => void;
   isBaseline?: boolean;
   difference?: number;
   isActive?: boolean;
@@ -55,7 +54,6 @@ export function ScenarioCard({
   groups,
   onUpdate,
   onDelete,
-  onClone,
   isBaseline = false,
   difference,
   isActive = false,
@@ -387,17 +385,6 @@ export function ScenarioCard({
 
         {!isBaseline && (
           <View style={styles.actions}>
-            {onClone && (
-              <Button
-                mode="outlined"
-                onPress={onClone}
-                icon="content-copy"
-                compact
-                style={styles.actionButton}
-              >
-                Clone
-              </Button>
-            )}
             {onDelete && (
               <Button
                 mode="text"

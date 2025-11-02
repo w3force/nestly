@@ -48,6 +48,15 @@ __pycache__/
 .expo/
 **/.expo/
 apps/mobile/.expo/
+
+# Build outputs (APK, AAB, etc)
+*.apk
+*.aab
+build-*.apk
+build-*.aab
+apps/mobile/build-*
+dist/
+build/
 .expo-shared/
 
 # JetBrains

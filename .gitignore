@@ -1,0 +1,49 @@
+# Build files
+build/
+dist/
+*.apk
+*.aab
+build-*.apk
+build-*.aab
+
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+pnpm-error.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+.pnpm-store/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.so
+.venv/
+env/
+venv/
+
+# Temporary files
+tmp-inspect/
+*.tmp
+.cache/

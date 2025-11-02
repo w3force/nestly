@@ -329,6 +329,10 @@ const DeterministicTab: React.FC = () => {
       }),
     [scrollY]
   );
+  const topContentPadding = useMemo(
+    () => SPACING.lg + Math.max(insets.top - SPACING.md, 0),
+    [insets.top]
+  );
 
   const [age, setAge] = useState(input?.age ?? 30);
   const [retireAge, setRetireAge] = useState(input?.retireAge ?? 65);
@@ -688,7 +692,7 @@ const DeterministicTab: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: '#F2FBF5' }]} edges={['top', 'left', 'right']}> 
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: '#F2FBF5' }]} edges={['left', 'right']}>
       <Animated.View
         pointerEvents="none"
         style={[
@@ -717,7 +721,7 @@ const DeterministicTab: React.FC = () => {
         style={{ flex: 1 }}
         contentContainerStyle={[
           styles.content,
-          { paddingTop: SPACING.lg + insets.top },
+          { paddingTop: topContentPadding },
         ]}
         scrollEventThrottle={16}
         onScroll={Animated.event(

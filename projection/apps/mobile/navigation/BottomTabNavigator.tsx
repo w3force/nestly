@@ -11,11 +11,16 @@ import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
 
-export default function BottomTabNavigator() {
+interface BottomTabNavigatorProps {
+  initialRouteName?: string;
+}
+
+export default function BottomTabNavigator({ initialRouteName }: BottomTabNavigatorProps) {
   const theme = useTheme();
 
   return (
     <Tab.Navigator
+      initialRouteName={initialRouteName ?? 'Home'}
       screenOptions={{
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.onSurfaceVariant,

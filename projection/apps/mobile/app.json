@@ -4,13 +4,13 @@
     "slug": "nestly",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon3.png",
+    "icon": "./assets/icon-appdrawer.png",
     "scheme": "nestly",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/icon3.png",
+      "image": "./assets/icon-foreground.png",
       "resizeMode": "contain",
-      "backgroundColor": "#4ABDAC"
+      "backgroundColor": "#F5F5F5"
     },
     "updates": {
       "fallbackToCacheTimeout": 0
@@ -21,12 +21,12 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.w3force.nestly",
-      "icon": "./assets/icon3.png"
+      "icon": "./assets/icon-appdrawer.png"
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/icon3.png",
-        "backgroundColor": "#4ABDAC"
+      "adaptiveIcon": { 
+        "foregroundImage": "./assets/icon-appdrawer.png",
+        "backgroundColor": "#F5F5F5"
       },
       "package": "com.w3force.nestly"
     },
